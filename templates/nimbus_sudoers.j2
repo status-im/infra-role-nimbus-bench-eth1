@@ -1,0 +1,4 @@
+# Allow non-root users logging in as nimbus user
+
+%{{ nimbus_eth1_service_group }} ALL= NOPASSWD: /bin/su – {{ nimbus_eth1_service_user }}
+%{{ nimbus_eth1_service_group }} ALL=({{ nimbus_eth1_service_user }}) NOPASSWD: ALL

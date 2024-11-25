@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# vim: set ft=sh:
+set -euo pipefail
+
+URL="http://localhost:{{ nimbus_eth1_http_port }}/"
+
+METHOD="$1"
+shift
+
+if [[ -z "${METHOD}" ]]; then
+    echo "No method specified!" >&2
+    exit 1
+fi
+if [[ -n "${@}" ]]; then
+    PARAMS=$(printf '%s,' "${@}")
+    PARAMS="${@%%,}\""
+else
+    PARAMS=''
+fi
+
+PAYLOAD="{
+  \"id\": 1,
+  \"jsonrpc\": \"2.0\",
+  \"method\": \"${METHOD}\",
+  \"params\": [${PARAMS}]
+}"
+
+# The jq script checks if error exists and adjusts exit code.
+curl --silent --show-error -X POST --max-time 10 \
+    -H "Content-type:application/json" \
+    --data "${PAYLOAD}" "${URL}" | \
+     jq -e '., if .error != null then null|halt_error(2) else halt end'

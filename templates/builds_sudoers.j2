@@ -1,0 +1,13 @@
+# Allow non-root users start Nimbus builds and manage service with sudo.
+
+# {{ nimbus_eth1_service_name }}
+%{{ nimbus_eth1_service_group }} ALL= NOPASSWD: /usr/bin/systemctl *status {{ nimbus_eth1_service_name }}*
+%{{ nimbus_eth1_service_group }} ALL= NOPASSWD: /usr/bin/systemctl *start {{ nimbus_eth1_service_name }}*
+%{{ nimbus_eth1_service_group }} ALL= NOPASSWD: /usr/bin/systemctl *stop {{ nimbus_eth1_service_name }}*
+%{{ nimbus_eth1_service_group }} ALL= NOPASSWD: /usr/bin/systemctl *restart {{ nimbus_eth1_service_name }}*
+
+# build-{{ nimbus_eth1_service_name }}
+%{{ nimbus_eth1_service_group }} ALL= NOPASSWD: /usr/bin/systemctl *status build-{{ nimbus_eth1_service_name }}*
+%{{ nimbus_eth1_service_group }} ALL= NOPASSWD: /usr/bin/systemctl *start build-{{ nimbus_eth1_service_name }}*
+%{{ nimbus_eth1_service_group }} ALL= NOPASSWD: /usr/bin/systemctl *stop build-{{ nimbus_eth1_service_name }}*
+%{{ nimbus_eth1_service_group }} ALL= NOPASSWD: /usr/bin/systemctl *restart build-{{ nimbus_eth1_service_name }}*

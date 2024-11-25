@@ -1,0 +1,10 @@
+---
+- name: Verify log level
+  assert:
+    that: '{{ nimbus_eth1_log_level in nimbus_eth1_valid_log_levels }}'
+    quiet: true
+
+- name: Verify network name
+  assert:
+    that: '{{ nimbus_eth1_network in nimbus_eth1_valid_networks }}'
+    quiet: true

@@ -1,0 +1,70 @@
+---
+# short benchmark will be default unless overriden in group vars
+nimbus_eth1_benchmark_type: 'short'
+nimbus_eth1_service_name: 'nimbus-eth1-{{ nimbus_eth1_network }}-{{ nimbus_eth1_repo_branch }}-{{ nimbus_eth1_benchmark_type }}-benchmark'
+nimbus_eth1_service_path: '/home/data/{{ nimbus_eth1_service_name }}'
+nimbus_eth1_service_user: 'nimbus'
+nimbus_eth1_service_group: 'staff'
+nimbus_eth1_template_db: '/data/template-db'
+nimbus_eth1_db_dir: 'data/shared_mainnet_0/nimbus/aristo'
+
+# Paths
+nimbus_eth1_data_path: '{{ nimbus_eth1_service_path }}/data'
+nimbus_eth1_data_folder: 'shared_{{ nimbus_eth1_network }}_0'
+nimbus_eth1_logs_link: '{{ nimbus_eth1_service_path }}/logs'
+nimbus_eth1_rpc_script_path: '{{ nimbus_eth1_service_path }}/rpc.sh'
+
+# Config
+nimbus_eth1_valid_log_levels:  [TRACE, DEBUG, INFO, NOTICE, WARN, ERROR, FATAL]
+nimbus_eth1_log_level: 'INFO'
+nimbus_eth1_valid_networks: [mainnet, sepolia, holesky]
+nimbus_eth1_network: 'mainnet'
+nimbus_eth1_max_peers: 25
+nimbus_eth1_discovery_mode: 'V4' # None, V4, V5
+nimbus_eth1_public_address: '{{ ansible_host }}'
+
+# Ports
+nimbus_eth1_listening_addr: '0.0.0.0'
+nimbus_eth1_listening_port: 30303
+nimbus_eth1_discovery_port: 30303
+nimbus_eth1_rpc_enabled: true
+nimbus_eth1_ws_enabled: false
+nimbus_eth1_graphql_enabled: false
+nimbus_eth1_rpc_api: ['eth', 'debug']
+nimbus_eth1_ws_api: ['eth', 'debug']
+nimbus_eth1_http_address: '127.0.0.1'
+nimbus_eth1_http_port: 8545
+nimbus_eth1_engine_http_enabled: false
+nimbus_eth1_engine_ws_enabled: false
+nimbus_eth1_engine_http_address: '127.0.0.1'
+nimbus_eth1_engine_http_port: 8550
+nimbus_eth1_metrics_enabled: true
+nimbus_eth1_metrics_address: '127.0.0.1'
+nimbus_eth1_metrics_port: 9093
+
+# Optional API encryption using 32 byte hex-encoded shared secret.
+#nimbus_eth1_jwt_secret: ~
+nimbus_eth1_jwt_secret_path: '{{ nimbus_eth1_data_path }}/jwt.hex'
+
+#nimbus_eth1_era_dir: ~
+#nimbus_eth1_era1_dir: ~
+
+# Build
+nimbus_eth1_build_timer_enabled: true
+nimbus_eth1_build_service_name: 'build-{{ nimbus_eth1_service_name }}'
+nimbus_eth1_build_script_path: '{{ nimbus_eth1_service_path }}/build.sh'
+nimbus_eth1_build_frequency: 'daily'
+nimbus_eth1_build_timer_timeout: 3600
+nimbus_eth1_build_days_kept: 3
+# FIXME: remove -d:disableMarchNative when https://github.com/bitcoin-core/secp256k1/issues/1623 is fixed
+nimbus_eth1_build_nim_flags: ['-d:chronicles_colors=none','-d:disableMarchNative']
+
+# Repo
+nimbus_eth1_repo_branch: 'master'
+nimbus_eth1_repo_url: 'https://github.com/status-im/nimbus-eth1'
+nimbus_eth1_repo_path: '{{ nimbus_eth1_service_path }}/repo'
+
+# Consul service definition settings
+nimbus_eth1_consul_service_name: 'nimbus-eth1'
+nimbus_eth1_consul_service_file_name: '{{ nimbus_eth1_service_name | replace("-", "_") }}'
+nimbus_eth1_consul_metrics_service_name: '{{ nimbus_eth1_consul_service_name }}-metrics'

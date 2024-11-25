@@ -1,0 +1,25 @@
+---
+- name: Create user for beacon node builds
+  user:
+    name: '{{ nimbus_eth1_service_user }}'
+    group: '{{ nimbus_eth1_service_group }}'
+    shell: '/bin/bash'
+
+- name: Set disable rebase as merge strategy
+  git_config:
+    scope: 'global'
+    name: 'pull.rebase'
+    value: 'false'
+  become_user: '{{ nimbus_eth1_service_user }}'
+
+- name: Sudoers file to let non-root users start jobs
+  template:
+    src: 'builds_sudoers.j2'
+    dest: '/etc/sudoers.d/70-{{ nimbus_eth1_service_name }}-builds'
+    mode: 0440
+
+- name: Sudoers file for login as nimbus user
+  template:
+    src: 'nimbus_sudoers.j2'
+    dest: '/etc/sudoers.d/71-{{ nimbus_eth1_service_name }}-login'
+    mode: 0440

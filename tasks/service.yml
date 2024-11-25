@@ -1,0 +1,38 @@
+---
+- name: Symlink service logs folder
+  file:
+    src: '/var/log/service/{{ nimbus_eth1_service_name }}'
+    dest: '{{ nimbus_eth1_logs_link }}'
+    state: 'link'
+    force: true
+
+- name: Get current UTC timestamp
+  command: date --utc +%FT%TZ
+  register: current_timestamp
+  changed_when: false
+
+- name: Get git commit hash
+  command: git show --format="%h" --no-patch
+  args:
+    chdir: "{{ nimbus_eth1_repo_path }}"
+  register: git_hash
+  changed_when: false
+
+- name: Set benchmark filename
+  set_fact:
+    benchmark_file_name: "{{ current_timestamp.stdout }}-{{ git_hash.stdout }}.csv"
+
+- name: Create systemd Unit file
+  template:
+    src: 'nimbus-eth1-{{ nimbus_eth1_benchmark_type }}-benchmark.service.j2'
+    dest: '/etc/systemd/system/{{ nimbus_eth1_service_name }}.service'
+    mode: 0644
+
+- name: Reload systemctl
+  command: systemctl daemon-reload
+
+- name: Restart the service
+  service:
+    name: '{{ nimbus_eth1_service_name }}.service'
+    state: 'restarted'
+    enabled: true

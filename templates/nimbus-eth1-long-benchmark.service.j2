@@ -1,0 +1,22 @@
+[Unit]
+Description=Nimbus Eth1 short import benchmarking service (1 week)
+Documentation=https://github.com/status-im/nimbus-eth1
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+User=root
+Group=root
+SyslogIdentifier=nimbus-eth1-{{ nimbus_eth1_network }}-short-benchmark
+SyslogFacility=local6
+SyslogLevel=debug
+RuntimeMaxSec=168hr
+ExecStart={{ nimbus_eth1_repo_path }}/build/nimbus_execution_client import \
+    --network={{ nimbus_eth1_network }} \
+    --data-dir='{{ nimbus_eth1_data_path }}/{{ nimbus_eth1_data_folder }}' \
+    --era1-dir={{ nimbus_eth1_era1_dir | mandatory }} \
+    --era-dir={{ nimbus_eth1_era_dir | mandatory }} \
+    --metrics --debug-csv-stats=/data/{{ benchmark_file_name }}
+
+[Install]
+WantedBy=multi-user.target
