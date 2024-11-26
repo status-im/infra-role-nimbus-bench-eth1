@@ -10,14 +10,14 @@ function fetchChanges() {
     # We cannot use "git pull" in here, because history may be changed upstream
     cd "${BENCHMARK_GIT_REPO}"
     git fetch
-    git reset --hard "origin/main"
+    git reset --hard "origin/master"
     cd -
 }
 
 function moveMetricsCSVToRepo() {
   cd /data
   echo " >>> Moving benchmark csv to checked out git repo..."
-  mv "./${BENCHMARK_FILE_NAME}" "${BENCHMARK_GIT_REPO}/${BENCHMARK_FILE_NAME}"
+  cp "./${BENCHMARK_FILE_NAME}" "${BENCHMARK_GIT_REPO}/${BENCHMARK_FILE_NAME}"
 }
 
 function pushChangesToRepo() {
