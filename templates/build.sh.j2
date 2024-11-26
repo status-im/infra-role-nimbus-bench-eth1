@@ -28,22 +28,11 @@ function buildBinaries() {
     find build -mtime +{{ nimbus_eth1_build_days_kept }} -exec rm '{}' \+
 }
 
-function copyTemplateDB() {
-    echo " >>> Clean up existing db folder..."
-    rm -vrf "${ETH1_DB_DIR}"
-    echo " >>> Preparing path..."
-    mkdir -p "${ETH1_DB_DIR}"
-    echo " >>> Copy Template Db..."
-    cp -rf "${TEMPLATE_DB}/*" "${ETH1_DB_DIR}"
-}
-
 #-------------------------------------------------------------------------------
 
 BRANCH="{{ nimbus_eth1_repo_branch }}"
 SERVICE="{{ nimbus_eth1_service_name }}.service"
 BUILD_DIR="{{ nimbus_eth1_repo_path }}"
-TEMPLATE_DB="{{ nimbus_eth1_template_db }}"
-ETH1_DB_DIR="{{ nimbus_eth1_db_dir }}"
 
 if [[ "${USER}" != "{{ nimbus_eth1_service_user }}" ]]; then
     echo "Incorrect user: ${USER}" >&2
@@ -66,7 +55,6 @@ COMMIT=$(git rev-parse --short=8 HEAD)
 
 echo " >>> Building binaries..."
 buildBinaries
-copyTemplateDB
 
 # Avoid failure on first Ansible run due to missing service.
 if [[ $(systemctl is-active "${SERVICE}" || true) == "inactive" ]]; then

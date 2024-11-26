@@ -10,6 +10,60 @@
     - '{{ nimbus_eth1_service_path }}'
     - '{{ nimbus_eth1_data_path }}'
 
+- name: Create SSH config directory
+  file:
+    path:  '{{ nimbus_eth1_service_user_ssh_dir }}'
+    owner: '{{ nimbus_eth1_service_user }}'
+    group: '{{ nimbus_eth1_service_group }}'
+    state: 'directory'
+    mode: 0750
+  when: nimbus_eth1_service_user_ssh_dir is defined
+
+- name: Check if SSH config exists
+  command: grep -F "StrictHostKeyChecking no" {{ nimbus_eth1_service_user_ssh_config }}
+  register: ssh_config_check
+  failed_when: false
+  changed_when: false
+  check_mode: no
+
+- name: Disable strict host key checking for GitHub
+  copy:
+    src:   'ssh_config'
+    dest:  '{{ nimbus_eth1_service_user_ssh_config }}'
+    owner: '{{ nimbus_eth1_service_user }}'
+    group: '{{ nimbus_eth1_service_group }}'
+    mode:  0400
+  when: ssh_config_check.rc != 0
+
+- name: Check if SSH key exists
+  command: grep -F "{{ nimbus_eth1_benchmarks_repo_ssh_key | regex_escape() }}" {{ nimbus_eth1_benchmarks_ssh_key_file }}
+  register: ssh_key_check
+  failed_when: false
+  changed_when: false
+  check_mode: no
+  when: nimbus_eth1_benchmarks_ssh_key_file is defined
+
+- name: Append SSH private key
+  copy:
+    dest: '{{ nimbus_eth1_benchmarks_ssh_key_file }}'
+    content: |
+      {{ nimbus_eth1_benchmarks_repo_ssh_key }}
+    owner: '{{ nimbus_eth1_service_user }}'
+    group: '{{ nimbus_eth1_service_group }}'
+    mode: 0400
+  when:
+    - nimbus_eth1_benchmarks_ssh_key_file is defined
+#    - ssh_key_check.rc != 0
+
+- name: Clone git repo with existing benchmarks
+  git:
+    repo:    '{{ nimbus_eth1_benchmarks_git_repo_url }}'
+    dest:    '{{ nimbus_eth1_benchmark_git_repo_dir }}'
+    key_file: '{{ nimbus_eth1_benchmarks_ssh_key_file }}'
+    accept_hostkey: true
+    update: true
+    force: true
+
 - name: Create JSON RPC wrapper script
   template:
     src:    'rpc.sh.j2'

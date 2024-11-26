@@ -31,7 +31,6 @@
     systemd_timer_start_on_creation: '{{ not nimbus_eth1_bin.stat.exists }}'
     systemd_timer_consul_warning: true
     systemd_timer_enabled: '{{ nimbus_eth1_build_timer_enabled }}'
-    systemd_timer_frequency: '{{ nimbus_eth1_build_frequency }}'
     systemd_timer_timeout_sec: '{{ nimbus_eth1_build_timer_timeout }}'
     systemd_timer_work_dir: '{{ nimbus_eth1_service_path }}'
     systemd_timer_script_path: '{{ nimbus_eth1_build_script_path }}'

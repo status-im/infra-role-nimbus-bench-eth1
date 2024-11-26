@@ -4,9 +4,14 @@ nimbus_eth1_benchmark_type: 'short'
 nimbus_eth1_service_name: 'nimbus-eth1-{{ nimbus_eth1_network }}-{{ nimbus_eth1_repo_branch }}-{{ nimbus_eth1_benchmark_type }}-benchmark'
 nimbus_eth1_service_path: '/home/data/{{ nimbus_eth1_service_name }}'
 nimbus_eth1_service_user: 'nimbus'
+nimbus_eth1_service_user_ssh_dir: '/home/{{ nimbus_eth1_service_user }}/.ssh'
+nimbus_eth1_service_user_ssh_config: '{{ nimbus_eth1_service_user_ssh_dir }}/config'
 nimbus_eth1_service_group: 'staff'
 nimbus_eth1_template_db: '/data/template-db'
-nimbus_eth1_db_dir: 'data/shared_mainnet_0/nimbus/aristo'
+nimbus_eth1_db_dir: '{{ nimbus_eth1_service_path }}/data/shared_mainnet_0/nimbus/aristo'
+nimbus_eth1_publish_script: '/data/publish-metrics-github.sh'
+nimbus_eth1_benchmark_git_repo_dir: '/data/nimbus-eth1-benchmarks'
+nimbus_eth1_benchmarks_git_repo_url: 'git@github.com:status-im/nimbus-eth1-benchmarks.git'
 
 # Paths
 nimbus_eth1_data_path: '{{ nimbus_eth1_service_path }}/data'
@@ -53,8 +58,7 @@ nimbus_eth1_jwt_secret_path: '{{ nimbus_eth1_data_path }}/jwt.hex'
 nimbus_eth1_build_timer_enabled: true
 nimbus_eth1_build_service_name: 'build-{{ nimbus_eth1_service_name }}'
 nimbus_eth1_build_script_path: '{{ nimbus_eth1_service_path }}/build.sh'
-nimbus_eth1_build_frequency: 'daily'
-nimbus_eth1_build_timer_timeout: 3600
+nimbus_eth1_build_timer_timeout: 36000
 nimbus_eth1_build_days_kept: 3
 # FIXME: remove -d:disableMarchNative when https://github.com/bitcoin-core/secp256k1/issues/1623 is fixed
 nimbus_eth1_build_nim_flags: ['-d:chronicles_colors=none','-d:disableMarchNative']
@@ -63,8 +67,5 @@ nimbus_eth1_build_nim_flags: ['-d:chronicles_colors=none','-d:disableMarchNative
 nimbus_eth1_repo_branch: 'master'
 nimbus_eth1_repo_url: 'https://github.com/status-im/nimbus-eth1'
 nimbus_eth1_repo_path: '{{ nimbus_eth1_service_path }}/repo'
-
-# Consul service definition settings
-nimbus_eth1_consul_service_name: 'nimbus-eth1'
-nimbus_eth1_consul_service_file_name: '{{ nimbus_eth1_service_name | replace("-", "_") }}'
-nimbus_eth1_consul_metrics_service_name: '{{ nimbus_eth1_consul_service_name }}-metrics'
+nimbus_eth1_benchmarks_ssh_key_file: '{{ nimbus_eth1_service_user_ssh_dir }}/id_rsa'
+nimbus_eth1_benchmarks_repo_ssh_key: '{{lookup("vault", "nimbus/eth1/benchmark", field="github_webhook_ssh_key", override=True)}}'

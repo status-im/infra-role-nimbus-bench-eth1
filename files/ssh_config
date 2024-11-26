@@ -1,0 +1,4 @@
+Host github.com/status-im/nimbus-eth1-benchmarks
+        Hostname github.com
+        StrictHostKeyChecking accept-new
+        IdentityFile=/home/nimbus/.ssh/id_rsa

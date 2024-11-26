@@ -28,8 +28,38 @@
     dest: '/etc/systemd/system/{{ nimbus_eth1_service_name }}.service'
     mode: 0644
 
+- name: Create metrics github publish script
+  template:
+    src: 'publish-metrics-github.sh.j2'
+    dest: '{{ nimbus_eth1_publish_script }}'
+    owner: '{{ nimbus_eth1_service_user }}'
+    group: '{{ nimbus_eth1_service_group }}'
+    mode: 0775
+
 - name: Reload systemctl
   command: systemctl daemon-reload
+
+- name: Clean up existing DB
+  block:
+    - name: Remove existing DB directory
+      file:
+        path: "{{ nimbus_eth1_db_dir }}"
+        state: absent
+      become: true
+
+- name: Create DB directory
+  file:
+    path: "{{ nimbus_eth1_db_dir }}"
+    state: directory
+    mode: '0755'
+  become: true
+
+- name: Copy template DB contents
+  copy:
+    src: "{{ nimbus_eth1_template_db }}/"
+    dest: "{{ nimbus_eth1_db_dir }}"
+    remote_src: true
+  become: true
 
 - name: Restart the service
   service:

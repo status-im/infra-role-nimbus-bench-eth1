@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# vim: ft=sh
+set -e
+
+BENCHMARK_FILE_NAME="{{ benchmark_file_name }}"
+BENCHMARK_GIT_REPO="{{ nimbus_eth1_benchmark_git_repo_dir }}"
+
+function fetchChanges() {
+    echo " >>> Fetching latest changes from nimbus-eth1-benchmarks repo..."
+    # We cannot use "git pull" in here, because history may be changed upstream
+    cd "${BENCHMARK_GIT_REPO}"
+    git fetch
+    git reset --hard "origin/main"
+    cd -
+}
+
+function moveMetricsCSVToRepo() {
+  cd /data
+  echo " >>> Moving benchmark csv to checked out git repo..."
+  mv "./${BENCHMARK_FILE_NAME}" "${BENCHMARK_GIT_REPO}/${BENCHMARK_FILE_NAME}"
+}
+
+function pushChangesToRepo() {
+  cd "${BENCHMARK_GIT_REPO}"
+  git add "./${BENCHMARK_FILE_NAME}"
+  git commit -m "benchmark: publish metrics"
+  git push
+  echo " >>> Pushed benchmark csv to nimbus-eth1-benchmarks repo..."
+}
+
+fetchChanges
+moveMetricsCSVToRepo
+pushChangesToRepo
+
+

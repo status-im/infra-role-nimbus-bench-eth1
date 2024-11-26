@@ -16,7 +16,8 @@ ExecStart={{ nimbus_eth1_repo_path }}/build/nimbus_execution_client import \
     --data-dir='{{ nimbus_eth1_data_path }}/{{ nimbus_eth1_data_folder }}' \
     --era1-dir={{ nimbus_eth1_era1_dir | mandatory }} \
     --era-dir={{ nimbus_eth1_era_dir | mandatory }} \
-    --metrics --debug-csv-stats=/data/{{ benchmark_file_name }}
+    --debug-csv-stats=/data/{{ benchmark_file_name }}
+ExecStopPost={{ nimbus_eth1_publish_script }}
 
 [Install]
 WantedBy=multi-user.target
