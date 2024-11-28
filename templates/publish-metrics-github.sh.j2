@@ -14,12 +14,6 @@ function fetchChanges() {
     cd -
 }
 
-function moveMetricsCSVToRepo() {
-  cd /data
-  echo " >>> Moving benchmark csv to checked out git repo..."
-  cp "./${BENCHMARK_FILE_NAME}" "${BENCHMARK_GIT_REPO}/${BENCHMARK_FILE_NAME}"
-}
-
 function pushChangesToRepo() {
   cd "${BENCHMARK_GIT_REPO}"
   git add "./${BENCHMARK_FILE_NAME}"
@@ -29,7 +23,6 @@ function pushChangesToRepo() {
 }
 
 fetchChanges
-moveMetricsCSVToRepo
 pushChangesToRepo
 
 
