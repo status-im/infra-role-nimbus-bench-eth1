@@ -14,13 +14,13 @@
 - name: Get git commit hash
   command: git show --format="%h" --no-patch
   args:
-    chdir: "{{ nimbus_eth1_repo_path }}"
+    chdir: '{{ nimbus_eth1_repo_path }}'
   register: git_hash
   changed_when: false
 
 - name: Set benchmark filename
   set_fact:
-    benchmark_file_name: "{{ current_timestamp.stdout }}-{{ git_hash.stdout }}.csv"
+    benchmark_file_name: '{{ current_timestamp.stdout }}-{{ git_hash.stdout }}.csv'
 
 - name: Create systemd Unit file
   template:
@@ -43,22 +43,30 @@
   block:
     - name: Remove existing DB directory
       file:
-        path: "{{ nimbus_eth1_db_dir }}"
+        path: '{{ nimbus_eth1_db_dir }}'
         state: absent
       become: true
 
 - name: Create DB directory
   file:
-    path: "{{ nimbus_eth1_db_dir }}"
+    path: '{{ nimbus_eth1_db_dir }}'
     state: directory
     mode: '0755'
   become: true
 
 - name: Copy template DB contents
   copy:
-    src: "{{ nimbus_eth1_template_db }}/"
-    dest: "{{ nimbus_eth1_db_dir }}"
+    src: '{{ nimbus_eth1_template_db }}/'
+    dest: '{{ nimbus_eth1_db_dir }}'
     remote_src: true
+  become: true
+
+- name: Set ownership of DB directory and contents
+  file:
+    path: '{{ nimbus_eth1_db_dir }}'
+    owner: '{{ nimbus_eth1_service_user }}'
+    group: '{{ nimbus_eth1_service_group }}'
+    recurse: yes
   become: true
 
 - name: Restart the service
