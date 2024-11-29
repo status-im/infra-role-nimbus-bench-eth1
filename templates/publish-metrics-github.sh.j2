@@ -4,6 +4,10 @@ set -e
 
 BENCHMARK_FILE_NAME="{{ benchmark_file_name }}"
 BENCHMARK_GIT_REPO="{{ nimbus_eth1_benchmark_git_repo_dir }}"
+GIT_HASH="{{ git_hash.stdout }}"
+ENVIRONMENT_LOG_FILE_NAME="${GIT_HASH}-build-environment.log"
+ENVIRONMENT_LOG_FILE_PATH="${BENCHMARK_GIT_REPO}/${ENVIRONMENT_LOG_FILE_NAME}"
+BENCHMARKING_FILE_PATH="${BENCHMARK_GIT_REPO}/${BENCHMARK_FILE_NAME}"
 
 function fetchChanges() {
     echo " >>> Fetching latest changes from nimbus-eth1-benchmarks repo..."
@@ -14,15 +18,94 @@ function fetchChanges() {
     cd -
 }
 
+function fetchBenchmarkingJobSummary () {
+
+  TOTAL_TIME=""
+  TOTAL_TIME=$(tail -n +2 "${BENCHMARKING_FILE_PATH}" | awk -F',' '{sum += $6} END {print sum}')
+
+  if [ -z "$TOTAL_TIME" ]; then
+      echo "Error: No data found or invalid input"
+      exit 1
+  fi
+
+  SECONDS=""
+  SECONDS=$(echo "scale=2; $TOTAL_TIME / 1000000000" | bc)
+
+  DAYS=$(echo "$SECONDS/86400" | bc)
+  HOURS=$(echo "($SECONDS%86400)/3600" | bc)
+  MINUTES=$(echo "($SECONDS%3600)/60" | bc)
+  REMAINDER=$(echo "$SECONDS%60" | bc)
+
+  HUMAN_READABLE_BENCHMARKING_TIME="$DAYS days, $HOURS hours, $MINUTES minutes, $REMAINDER seconds"
+
+  echo "=== Nimbus-ETH1 Benchmarking Report ==="
+  echo ">>> Total time spent in benchmarking is ${HUMAN_READABLE_BENCHMARKING_TIME}"
+
+  END_BLOCK_NUMBER=$(tail -1 "${BENCHMARKING_FILE_PATH}" | cut -d',' -f1)
+  echo ">>> End block number is ${END_BLOCK_NUMBER}"
+
+  START_BLOCK_NUMBER=$(tail -n +2 "${BENCHMARKING_FILE_PATH}" | head -1 | cut -d',' -f1)
+  echo ">>> Start block number is ${START_BLOCK_NUMBER}"
+
+  BENCHMARK_RUN_COMMAND=$(systemctl cat nimbus-eth1-mainnet-master-short-benchmark.service | sed -n '/^ExecStart=/,/[^\\]$/p' | sed 's/^ExecStart=//')
+  echo ">>> Benchmarking was run using ${BENCHMARK_RUN_COMMAND}"
+  echo "=========================="
+}
+
+function fetchHostInformation () {
+  echo "=== System Information Report ==="
+  echo ">>> Generated on: $(date)"
+  echo "=========================="
+
+  echo -n ">>> CPU Architecture: "
+  lscpu | grep "Architecture" | awk '{print $2}'
+
+  echo -n ">>> CPU Byte Order: "
+  lscpu | grep "Byte Order" | sed 's/Byte Order://' | sed 's/^[ \t]*//'
+
+  echo -n ">>> CPU Cores: "
+  nproc
+
+  echo -n ">>> CPU Model: "
+  lscpu | grep "Model name" | sed 's/Model name://' | sed 's/^[ \t]*//'
+
+  echo ">>> CPU Cache Information:"
+  echo -n "L1d Cache: "
+  lscpu | grep "L1d" | sed 's/L1d cache://' | sed 's/^[ \t]*//'
+  echo -n "L1i Cache: "
+  lscpu | grep "L1i" | sed 's/L1i cache://' | sed 's/^[ \t]*//'
+  echo -n "L2 Cache: "
+  lscpu | grep "L2" | sed 's/L2 cache://' | sed 's/^[ \t]*//'
+  echo -n "L3 Cache: "
+  lscpu | grep "L3" | sed 's/L3 cache://' | sed 's/^[ \t]*//'
+
+  echo -n ">>> RAM Size: "
+  free -h | grep "Mem:" | awk '{print $2}'
+
+  echo ">>> Hard Disk Information:"
+  df -h | grep '^/dev/' | awk '{print $1 " : " $2 " total, " $4 " free"}'
+  echo "=========================="
+}
+
+function generateBenchmarkSummary() {
+  touch "${ENVIRONMENT_LOG_FILE_PATH}"
+   {
+        fetchHostInformation
+        fetchBenchmarkingJobSummary
+   } >> "${ENVIRONMENT_LOG_FILE_PATH}" 2>&1
+}
+
 function pushChangesToRepo() {
   cd "${BENCHMARK_GIT_REPO}"
   git add "./${BENCHMARK_FILE_NAME}"
-  git commit -m "benchmark: publish metrics"
+  git add "./${ENVIRONMENT_LOG_FILE_NAME}"
+  git commit -m "benchmark: publish metrics and report"
   git push
   echo " >>> Pushed benchmark csv to nimbus-eth1-benchmarks repo..."
 }
 
 fetchChanges
+generateBenchmarkSummary
 pushChangesToRepo
 
 
