@@ -15,6 +15,8 @@
   command: git show --format="%h" --no-patch
   args:
     chdir: '{{ nimbus_eth1_repo_path }}'
+  become: true
+  become_user: '{{ nimbus_eth1_service_user }}'
   register: git_hash
   changed_when: false
 
