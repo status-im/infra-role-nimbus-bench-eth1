@@ -12,6 +12,7 @@ SyslogFacility=local6
 SyslogLevel=debug
 RuntimeMaxSec=24hr
 TimeoutStartSec=36000
+ExecStartPre={{ nimbus_eth1_build_script }}
 ExecStartPre={{ nimbus_eth1_db_gen_script }}
 ExecStart={{ nimbus_eth1_repo_path }}/build/nimbus_execution_client import \
     --network={{ nimbus_eth1_network }} \
@@ -22,6 +23,7 @@ ExecStart={{ nimbus_eth1_repo_path }}/build/nimbus_execution_client import \
 ExecStopPost={{ nimbus_eth1_publish_script }}
 Restart=always
 RestartSec=5
+TimeoutSec=600
 
 [Install]
 WantedBy=multi-user.target

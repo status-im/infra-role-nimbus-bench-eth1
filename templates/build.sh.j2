@@ -2,37 +2,53 @@
 # vim: ft=sh
 set -e
 
-function headIsDetached() {
-    [[ $(git rev-parse --abbrev-ref --symbolic-full-name HEAD) == "HEAD" ]];
-}
-
-function fetchChanges() {
-    # We cannot use "git pull" in here, because history may be changed upstream
-    git fetch
-    git reset --hard "origin/${BRANCH}"
-}
-
-function buildBinaries() {
-
-    make -j{{ ansible_processor_vcpus }} update
-    make -j{{ ansible_processor_vcpus }} nimbus \
-        LOG_LEVEL="TRACE" NIMFLAGS="{{ nimbus_eth1_build_nim_flags | join(" ") }}"
-
-    # Rename binaries to match commit they were built from.
-    mv "build/nimbus_execution_client" "build/nimbus_execution_client_${COMMIT}"
-
-    # Create a symbolic link to the latest version
-    ln -frs build/nimbus_execution_client_${COMMIT} build/nimbus_execution_client
-
-    # Delete copies that are older than N days
-    find build -mtime +{{ nimbus_eth1_build_days_kept }} -exec rm '{}' \+
-}
-
-#-------------------------------------------------------------------------------
-
+REPO_URL="{{ nimbus_eth1_repo_url }}"
 BRANCH="{{ nimbus_eth1_repo_branch }}"
 SERVICE="{{ nimbus_eth1_service_name }}.service"
 BUILD_DIR="{{ nimbus_eth1_repo_path }}"
+
+function cloneOrFetchRepo() {
+    mkdir -p ${BUILD_DIR}
+
+    # Check if git repo already exists
+    if [ -d "${BUILD_DIR}/.git" ]; then
+        cd "${BUILD_DIR}"
+        echo ">>> Fetching latest changes..."
+        git fetch
+        git reset --hard "origin/${BRANCH}"
+    else
+        echo ">>> Cloning repo..."
+        git clone -b "${BRANCH}" "${REPO_URL}" "${BUILD_DIR}"
+    fi
+}
+
+function buildBinaries() {
+    cd "${BUILD_DIR}"
+    COMMIT=$(git rev-parse --short=8 HEAD)
+
+    if [[ -f "build/nimbus_execution_client_${COMMIT}" ]]; then
+        echo ">>> Binaries already exist, no need to build!"
+        exit
+    else
+
+      echo " >>> Building binaries..."
+
+      make -j{{ ansible_processor_vcpus }} update
+      make -j{{ ansible_processor_vcpus }} nimbus \
+          LOG_LEVEL="TRACE" NIMFLAGS="{{ nimbus_eth1_build_nim_flags | join(" ") }}"
+
+      # Rename binaries to match commit they were built from.
+      mv "build/nimbus_execution_client" "build/nimbus_execution_client_${COMMIT}"
+
+      # Create a symbolic link to the latest version
+      ln -frs build/nimbus_execution_client_${COMMIT} build/nimbus_execution_client
+
+      # Delete copies that are older than N days
+      find build -mtime +{{ nimbus_eth1_build_days_kept }} -exec rm '{}' \+
+    fi
+}
+
+#-------------------------------------------------------------------------------
 
 if [[ "${USER}" != "{{ nimbus_eth1_service_user }}" ]]; then
     echo "Incorrect user: ${USER}" >&2
@@ -40,20 +56,7 @@ if [[ "${USER}" != "{{ nimbus_eth1_service_user }}" ]]; then
     exit 1
 fi
 
-# Build the Beacon node binaries
-cd "${BUILD_DIR}"
-
-# Detached HEAD means we're probably on a tag
-if headIsDetached; then
-    echo " >>> Detached HEAD, nothing to fetch."
-else
-    echo " >>> Fetching changes..."
-    fetchChanges
-fi
-
-COMMIT=$(git rev-parse --short=8 HEAD)
-
-echo " >>> Building binaries..."
+cloneOrFetchRepo
 buildBinaries
 
 # Avoid failure on first Ansible run due to missing service.
