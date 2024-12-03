@@ -6,24 +6,6 @@
     state: 'link'
     force: true
 
-- name: Get current UTC timestamp
-  command: date --utc +%FT%TZ
-  register: current_timestamp
-  changed_when: false
-
-- name: Get git commit hash
-  command: git show --format="%h" --no-patch
-  args:
-    chdir: '{{ nimbus_eth1_repo_path }}'
-  become: true
-  become_user: '{{ nimbus_eth1_service_user }}'
-  register: git_hash
-  changed_when: false
-
-- name: Set benchmark filename
-  set_fact:
-    benchmark_file_name: '{{ current_timestamp.stdout }}-{{ git_hash.stdout }}.csv'
-
 - name: Create systemd Unit file
   template:
     src: 'nimbus-eth1-{{ nimbus_eth1_benchmark_type }}-benchmark.service.j2'

@@ -13,7 +13,9 @@ nimbus_eth1_publish_script: '/data/publish-metrics-github.sh'
 nimbus_eth1_db_gen_script: '/data/database-generation-and-cleanup.sh'
 nimbus_eth1_benchmark_git_repo_dir: '/data/nimbus-eth1-benchmarks'
 nimbus_eth1_benchmarks_git_repo_url: 'git@github.com:status-im/nimbus-eth1-benchmarks.git'
-
+nimbus_eth1_benchmark_dir: '{{ nimbus_eth1_benchmark_git_repo_dir }}/{{ nimbus_eth1_benchmark_type }}-benchmark'
+nimbus_eth1_benchmark_file_name: 'blocks-import-benchmark.csv'
+nimbus_eth1_environment_log_file_name: 'build-environment.log'
 # Paths
 nimbus_eth1_data_path: '{{ nimbus_eth1_service_path }}/data'
 nimbus_eth1_data_folder: 'shared_{{ nimbus_eth1_network }}_0'

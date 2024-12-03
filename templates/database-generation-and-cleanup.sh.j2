@@ -6,6 +6,8 @@ NIMBUS_ETH1_DB_DIR="{{ nimbus_eth1_db_dir }}"
 NIMBUS_ETH1_TEMPLATE_DB="{{ nimbus_eth1_template_db }}"
 NIMBUS_ETH1_SERVICE_USER="{{ nimbus_eth1_service_user }}"
 NIMBUS_ETH1_SERVICE_GROUP="{{ nimbus_eth1_service_group }}"
+BENCHMARK_FILE_NAME="{{ nimbus_eth1_benchmark_file_name }}"
+BENCHMARKING_FILE_PATH="/data/${BENCHMARK_FILE_NAME}"
 
 echo ">>> Cleaning up existing database files if any"
 rm -rf "$NIMBUS_ETH1_DB_DIR/*"
@@ -19,3 +21,6 @@ cp -r "$NIMBUS_ETH1_TEMPLATE_DB/." "$NIMBUS_ETH1_DB_DIR/"
 
 echo ">>> Template db copied"
 chown -R "$NIMBUS_ETH1_SERVICE_USER:$NIMBUS_ETH1_SERVICE_GROUP" "$NIMBUS_ETH1_DB_DIR"
+
+echo ">>> clean up old benchmarks"
+rm -f "${BENCHMARKING_FILE_PATH}"

@@ -2,12 +2,14 @@
 # vim: ft=sh
 set -e
 
-BENCHMARK_FILE_NAME="{{ benchmark_file_name }}"
+BENCHMARK_FILE_NAME="{{ nimbus_eth1_benchmark_file_name }}"
 BENCHMARK_GIT_REPO="{{ nimbus_eth1_benchmark_git_repo_dir }}"
-GIT_HASH="{{ git_hash.stdout }}"
-ENVIRONMENT_LOG_FILE_NAME="${GIT_HASH}-build-environment.log"
-ENVIRONMENT_LOG_FILE_PATH="${BENCHMARK_GIT_REPO}/${ENVIRONMENT_LOG_FILE_NAME}"
+ENVIRONMENT_LOG_FILE_NAME="{{ nimbus_eth1_environment_log_file_name }}"
 BENCHMARKING_FILE_PATH="${BENCHMARK_GIT_REPO}/${BENCHMARK_FILE_NAME}"
+ISO_TIMESTAMP=$(date +"%Y%m%dT%H%M%S")
+GIT_HASH=$(cd "${BENCHMARK_GIT_REPO}" && git rev-parse --short HEAD)
+BENCHMARK_DESTINATION="${BENCHMARK_GIT_REPO}/short-benchmark/${ISO_TIMESTAMP}_${GIT_HASH}"
+ENVIRONMENT_LOG_FILE_PATH="${BENCHMARK_DESTINATION}/${ENVIRONMENT_LOG_FILE_NAME}"
 
 function fetchChanges() {
     echo " >>> Fetching latest changes from nimbus-eth1-benchmarks repo..."
@@ -50,6 +52,11 @@ function fetchBenchmarkingJobSummary () {
   BENCHMARK_RUN_COMMAND=$(systemctl cat nimbus-eth1-mainnet-master-short-benchmark.service | sed -n '/^ExecStart=/,/[^\\]$/p' | sed 's/^ExecStart=//')
   echo ">>> Benchmarking was run using ${BENCHMARK_RUN_COMMAND}"
   echo "=========================="
+}
+
+function moveBenchmarkingFileToRepo() {
+  mkdir -p "${BENCHMARK_DESTINATION}"
+  cp "${BENCHMARKING_FILE_PATH}" "${BENCHMARK_DESTINATION}/${BENCHMARK_FILE_NAME}"
 }
 
 function fetchHostInformation () {
@@ -96,7 +103,7 @@ function generateBenchmarkSummary() {
 }
 
 function pushChangesToRepo() {
-  cd "${BENCHMARK_GIT_REPO}"
+  cd "${BENCHMARK_DESTINATION}"
   git add "./${BENCHMARK_FILE_NAME}"
   git add "./${ENVIRONMENT_LOG_FILE_NAME}"
   git commit -m "benchmark: publish metrics and report"
@@ -105,6 +112,7 @@ function pushChangesToRepo() {
 }
 
 fetchChanges
+moveBenchmarkingFileToRepo
 generateBenchmarkSummary
 pushChangesToRepo
 
