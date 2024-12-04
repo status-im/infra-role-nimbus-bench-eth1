@@ -20,6 +20,14 @@
     group: '{{ nimbus_eth1_service_group }}'
     mode: 0775
 
+- name: Create benchmarking repo fetching script
+  template:
+    src: 'fetch-benchmarks.sh.j2'
+    dest: '{{ nimbus_eth1_benchmark_gen_script }}'
+    owner: '{{ nimbus_eth1_service_user }}'
+    group: '{{ nimbus_eth1_service_group }}'
+    mode: 0775
+
 - name: Create metrics github publish script
   template:
     src: 'publish-metrics-github.sh.j2'

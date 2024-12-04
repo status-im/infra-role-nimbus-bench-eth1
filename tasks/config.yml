@@ -55,15 +55,6 @@
     - nimbus_eth1_benchmarks_ssh_key_file is defined
 #    - ssh_key_check.rc != 0
 
-- name: Clone git repo with existing benchmarks
-  git:
-    repo:    '{{ nimbus_eth1_benchmarks_git_repo_url }}'
-    dest:    '{{ nimbus_eth1_benchmark_git_repo_dir }}'
-    key_file: '{{ nimbus_eth1_benchmarks_ssh_key_file }}'
-    accept_hostkey: true
-    update: true
-    force: true
-
 - name: Create JSON RPC wrapper script
   template:
     src:    'rpc.sh.j2'

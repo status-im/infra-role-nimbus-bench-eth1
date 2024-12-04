@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# vim: ft=sh
+set -e
+
+BENCHMARKS_DIR_PATH="{{ nimbus_eth1_benchmark_git_repo_dir }}"
+BENCHMARKS_REPO_URL="{{ nimbus_eth1_benchmarks_git_repo_url }}"
+NIMBUS_ETH1_SERVICE_USER="{{ nimbus_eth1_service_user }}"
+NIMBUS_ETH1_SERVICE_GROUP="{{ nimbus_eth1_service_group }}"
+
+function cloneOrFetchRepo() {
+    mkdir -p "${BENCHMARKS_DIR_PATH}"
+
+    # Check if git repo already exists
+    if [ -d "${BENCHMARKS_DIR_PATH}/.git" ]; then
+        cd "${BENCHMARKS_DIR_PATH}"
+        echo ">>> Fetching latest changes..."
+        git fetch
+        git reset --hard "origin/master"
+    else
+        echo ">>> Cloning repo..."
+        git clone -b "master" "${BENCHMARKS_REPO_URL}" "${BENCHMARKS_DIR_PATH}"
+    fi
+
+    chown -R "$NIMBUS_ETH1_SERVICE_USER:$NIMBUS_ETH1_SERVICE_GROUP" "$BENCHMARKS_DIR_PATH"
+}
+
+cloneOrFetchRepo
