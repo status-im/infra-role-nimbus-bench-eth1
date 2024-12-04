@@ -20,28 +20,53 @@ function fetchChanges() {
     cd -
 }
 
+function convert_to_human_readable() {
+    local total_ns=$1
+
+    # Convert to seconds with decimal precision
+    local total_seconds=$(awk "BEGIN {printf \"%.2f\", $total_ns/1000000000}")
+
+    # Convert to integer seconds for calculations
+    local seconds_int=${total_seconds%.*}
+    local days=$(( seconds_int / 86400 ))
+    local hours=$(( (seconds_int % 86400) / 3600 ))
+    local minutes=$(( (seconds_int % 3600) / 60 ))
+    local seconds=$(( seconds_int % 60 ))
+
+    # For printing in human readable string
+    local result=""
+    [[ $days -gt 0 ]] && result+="$days days "
+    [[ $hours -gt 0 ]] && result+="$hours hours "
+    [[ $minutes -gt 0 ]] && result+="$minutes minutes "
+    [[ $seconds -gt 0 ]] && result+="$seconds seconds"
+
+    # Trim extra spaces and handle empty result
+    result="${result%% }"
+    [[ -z "$result" ]] && result="less than 1 second"
+
+    echo "$result"
+}
+
 function fetchBenchmarkingJobSummary () {
 
-  TOTAL_TIME=""
-  TOTAL_TIME=$(tail -n +2 "${BENCHMARKING_FILE_PATH}" | awk -F',' '{sum += $6} END {print sum}')
+  local total_time
+  total_time=$(awk -F',' '
+      NR>1 { # Skip header row
+          sum += $6
+      }
+      END {
+          print sum
+      }' "$BENCHMARKING_FILE_PATH"
+  )
 
-  if [ -z "$TOTAL_TIME" ]; then
+  if [ -z "$total_time" ]; then
       echo "Error: No data found or invalid input"
       exit 1
   fi
 
-  SECONDS=""
-  SECONDS=$(echo "scale=2; $TOTAL_TIME / 1000000000" | bc)
-
-  DAYS=$(echo "$SECONDS/86400" | bc)
-  HOURS=$(echo "($SECONDS%86400)/3600" | bc)
-  MINUTES=$(echo "($SECONDS%3600)/60" | bc)
-  REMAINDER=$(echo "$SECONDS%60" | bc)
-
-  HUMAN_READABLE_BENCHMARKING_TIME="$DAYS days, $HOURS hours, $MINUTES minutes, $REMAINDER seconds"
-
   echo "=== Nimbus-ETH1 Benchmarking Report ==="
-  echo ">>> Total time spent in benchmarking is ${HUMAN_READABLE_BENCHMARKING_TIME}"
+  echo ">>> Total time spent in benchmarking (nanoseconds): ${total_time}"
+  echo ">>> Total time spent in benchmarking (human readable format): $(convert_to_human_readable "$total_time")"
 
   END_BLOCK_NUMBER=$(tail -1 "${BENCHMARKING_FILE_PATH}" | cut -d',' -f1)
   echo ">>> End block number is ${END_BLOCK_NUMBER}"
