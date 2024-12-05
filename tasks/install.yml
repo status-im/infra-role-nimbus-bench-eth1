@@ -4,3 +4,4 @@
     name:
       - build-essential
       - librocksdb-dev
+      - python3-pandas

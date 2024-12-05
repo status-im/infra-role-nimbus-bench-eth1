@@ -3,6 +3,7 @@
 nimbus_eth1_benchmark_type: 'short'
 nimbus_eth1_service_name: 'nimbus-eth1-{{ nimbus_eth1_network }}-{{ nimbus_eth1_repo_branch }}-{{ nimbus_eth1_benchmark_type }}-benchmark'
 nimbus_eth1_service_path: '/home/data/{{ nimbus_eth1_service_name }}'
+nimbus_eth1_blocks_import_script_path: '{{ nimbus_eth1_service_path }}/scripts/block-import-stats.py'
 nimbus_eth1_service_log_output_name: '{{ nimbus_eth1_service_name }}-output.log'
 nimbus_eth1_service_log_error_name: '{{ nimbus_eth1_service_name }}-error.log'
 nimbus_eth1_service_user: 'nimbus'
