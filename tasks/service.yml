@@ -51,6 +51,17 @@
     dest: '/etc/systemd/system/{{ nimbus_eth1_service_name }}.timer'
     mode: 0644
 
+- name: Create log files
+  file:
+    path: "{{ item }}"
+    state: touch
+    owner: '{{ nimbus_eth1_service_user }}'
+    group: '{{ nimbus_eth1_service_group }}'
+    mode: '0644'
+  loop:
+    - '{{ nimbus_eth1_benchmark_log_output_file_path }}'
+    - '{{ nimbus_eth1_benchmark_log_error_file_path }}'
+
 - name: Reload systemctl
   command: systemctl daemon-reload
 

@@ -10,6 +10,10 @@ ISO_TIMESTAMP=$(date +"%Y%m%dT%H%M%S")
 GIT_HASH=$(cd "${BENCHMARK_GIT_REPO}" && git rev-parse --short HEAD)
 BENCHMARK_DESTINATION="${BENCHMARK_GIT_REPO}/short-benchmark/${ISO_TIMESTAMP}_${GIT_HASH}"
 ENVIRONMENT_LOG_FILE_PATH="${BENCHMARK_DESTINATION}/${ENVIRONMENT_LOG_FILE_NAME}"
+BENCHMARKING_SERVICE_LOG_FILE_NAME="{{ nimbus_eth1_service_log_output_name }}"
+BENCHMARKING_SERVICE_ERROR_FILE_NAME="{{ nimbus_eth1_service_log_error_name }}"
+BENCHMARKING_SERVICE_OUTPUT_LOG_FILE="{{ nimbus_eth1_benchmark_log_output_file_path }}"
+BENCHMARKING_SERVICE_ERROR_LOG_FILE="{{ nimbus_eth1_benchmark_log_error_file_path }}"
 
 function fetchChanges() {
     echo " >>> Fetching latest changes from nimbus-eth1-benchmarks repo..."
@@ -81,7 +85,15 @@ function fetchBenchmarkingJobSummary () {
 
 function moveBenchmarkingFileToRepo() {
   mkdir -p "${BENCHMARK_DESTINATION}"
+
+  echo ">>> copying benchmarking file to repo"
   cp "${BENCHMARKING_FILE_PATH}" "${BENCHMARK_DESTINATION}/${BENCHMARK_FILE_NAME}"
+
+  echo ">>> copying service output log file to repo"
+  cp "${BENCHMARKING_SERVICE_OUTPUT_LOG_FILE}" "${BENCHMARK_DESTINATION}/${BENCHMARKING_SERVICE_LOG_FILE_NAME}"
+
+  echo ">>> copying service error log file to repo"
+  cp "${BENCHMARKING_SERVICE_ERROR_LOG_FILE}" "${BENCHMARK_DESTINATION}/${BENCHMARKING_SERVICE_ERROR_FILE_NAME}"
 }
 
 function fetchHostInformation () {
@@ -129,8 +141,7 @@ function generateBenchmarkSummary() {
 
 function pushChangesToRepo() {
   cd "${BENCHMARK_DESTINATION}"
-  git add "./${BENCHMARK_FILE_NAME}"
-  git add "./${ENVIRONMENT_LOG_FILE_NAME}"
+  git add .
   git commit -m "benchmark: publish metrics and report"
   git push
   echo " >>> Pushed benchmark csv to nimbus-eth1-benchmarks repo..."
