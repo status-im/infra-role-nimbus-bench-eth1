@@ -72,11 +72,12 @@ function fetchBenchmarkingJobSummary () {
   echo ">>> Total time spent in benchmarking (nanoseconds): ${total_time}"
   echo ">>> Total time spent in benchmarking (human readable format): $(convert_to_human_readable "$total_time")"
 
+  # start block number is column[0] - column[1]
+  START_BLOCK_NUMBER=$(tail -n +2 "${BENCHMARKING_FILE_PATH}" | head -1 | awk -F',' '{print $1 - $2}')
+  echo ">>> Start block number is ${START_BLOCK_NUMBER}"
+
   END_BLOCK_NUMBER=$(tail -1 "${BENCHMARKING_FILE_PATH}" | cut -d',' -f1)
   echo ">>> End block number is ${END_BLOCK_NUMBER}"
-
-  START_BLOCK_NUMBER=$(tail -n +2 "${BENCHMARKING_FILE_PATH}" | head -1 | cut -d',' -f1)
-  echo ">>> Start block number is ${START_BLOCK_NUMBER}"
 
   BENCHMARK_RUN_COMMAND=$(systemctl cat nimbus-eth1-mainnet-master-short-benchmark.service | sed -n '/^ExecStart=/,/[^\\]$/p' | sed 's/^ExecStart=//')
   echo ">>> Benchmarking was run using ${BENCHMARK_RUN_COMMAND}"
