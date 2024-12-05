@@ -43,6 +43,7 @@
     owner: '{{ nimbus_eth1_service_user }}'
     group: '{{ nimbus_eth1_service_group }}'
     mode: 0775
+  when: nimbus_eth1_benchmark_type == 'short'
 
 - name: Reload systemctl
   command: systemctl daemon-reload

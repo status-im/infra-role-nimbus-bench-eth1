@@ -1,0 +1,11 @@
+[Unit]
+Description=Timer for Nimbus ETH1 Long Benchmark Service
+Requires=nimbus-eth1-long-benchmark.service
+
+[Timer]
+OnCalendar=*:0/30
+AccuracySec=1s
+Persistent=true
+
+[Install]
+WantedBy=timers.target
