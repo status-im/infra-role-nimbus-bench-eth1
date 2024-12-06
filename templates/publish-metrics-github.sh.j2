@@ -16,8 +16,8 @@ BENCHMARKING_SERVICE_ERROR_FILE_NAME="{{ nimbus_eth1_service_log_error_name }}"
 BENCHMARKING_SERVICE_OUTPUT_LOG_FILE="{{ nimbus_eth1_benchmark_log_output_file_path }}"
 BENCHMARKING_SERVICE_ERROR_LOG_FILE="{{ nimbus_eth1_benchmark_log_error_file_path }}"
 NIMBUS_ETH1_BLOCKS_IMPORT_SCRIPT_PATH="{{ nimbus_eth1_blocks_import_script_path }}"
-LATEST_BENCHMARKED_CSV_DIRECTORY=$(ls -l "${BENCHMARK_GIT_REPO}/${BENCHMARKING_TYPE}-benchmark" | sort -r | grep "^d" | head -n 1 | awk '{print $NF}')
-LATEST_BENCHMARKED_CSV_FILE_PATH="${LATEST_BENCHMARKED_CSV_DIRECTORY}/${BENCHMARK_FILE_NAME}"
+LATEST_BENCHMARKED_CSV_DIRECTORY=$(find "${BENCHMARK_GIT_REPO}/${BENCHMARKING_TYPE}-benchmark" -maxdepth 1 -type d -printf '%T@ %f\n' 2>/dev/null | sort -nr | head -n 1 | cut -d' ' -f2)
+LATEST_BENCHMARKED_CSV_FILE_PATH="${BENCHMARK_GIT_REPO}/${BENCHMARKING_TYPE}-benchmark/${LATEST_BENCHMARKED_CSV_DIRECTORY}/${BENCHMARK_FILE_NAME}"
 
 function fetchChanges() {
     echo " >>> Fetching latest changes from nimbus-eth1-benchmarks repo..."
@@ -138,7 +138,9 @@ function fetchHostInformation () {
 
 function compareBenchmarkWithPrevious() {
   echo "=== Comparison of last two benchmarks ==="
-  python "${NIMBUS_ETH1_BLOCKS_IMPORT_SCRIPT_PATH}" "${BENCHMARKING_FILE_PATH}" "${LATEST_BENCHMARKED_CSV_FILE_PATH}"
+  # the python script may fail in case of incomparable benchmarks.
+  # in such cases we would just like to store the logs and carry on.
+  python "${NIMBUS_ETH1_BLOCKS_IMPORT_SCRIPT_PATH}" "${BENCHMARKING_FILE_PATH}" "${LATEST_BENCHMARKED_CSV_FILE_PATH}" 2>&1 || true
   echo "=========================="
 }
 

@@ -1,6 +1,6 @@
 [Unit]
 Description=Timer for Nimbus ETH1 Long Benchmark Service
-Requires=nimbus-eth1-long-benchmark.service
+Requires={{ nimbus_eth1_service_name }}.service
 
 [Timer]
 OnCalendar=*:0/30

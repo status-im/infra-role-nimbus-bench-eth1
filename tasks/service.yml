@@ -70,3 +70,9 @@
     name: '{{ nimbus_eth1_service_name }}.service'
     state: 'restarted'
     enabled: true
+
+- name: Restart the timer
+  systemd:
+    name: '{{ nimbus_eth1_service_name }}.timer'
+    state: started
+    enabled: yes
