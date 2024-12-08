@@ -1,11 +1,10 @@
 [Unit]
-Description=Timer for Nimbus ETH1 Short Benchmark Service
-Requires={{ nimbus_eth1_service_name }}.service
+Description=Timer for Nimbus Eth1 short import benchmarking
+After={{ nimbus_eth1_service_name }}.service
 
 [Timer]
-OnCalendar=*:0/30
-AccuracySec=1s
-Persistent=true
+OnUnitInactiveSec=45min
+RemainAfterElapse=true
 
 [Install]
-WantedBy=timers.target
+WantedBy=multi-user.target
