@@ -4,11 +4,10 @@ set -e
 
 REPO_URL="{{ nimbus_eth1_repo_url }}"
 BRANCH="{{ nimbus_eth1_repo_branch }}"
-SERVICE="{{ nimbus_eth1_service_name }}.service"
 BUILD_DIR="{{ nimbus_eth1_repo_path }}"
 
 function cloneOrFetchRepo() {
-    mkdir -p ${BUILD_DIR}
+    mkdir -p "${BUILD_DIR}"
 
     # Check if git repo already exists
     if [ -d "${BUILD_DIR}/.git" ]; then
@@ -46,26 +45,10 @@ function buildBinaries() {
       # Delete copies that are older than N days
       find build -mtime +{{ nimbus_eth1_build_days_kept }} -exec rm '{}' \+
     fi
+    echo " >>> Building Binaries stage complete ..."
 }
 
 #-------------------------------------------------------------------------------
 
-if [[ "${USER}" != "{{ nimbus_eth1_service_user }}" ]]; then
-    echo "Incorrect user: ${USER}" >&2
-    echo "Expected: {{ nimbus_eth1_service_user }}" >&2
-    exit 1
-fi
-
 cloneOrFetchRepo
 buildBinaries
-
-# Avoid failure on first Ansible run due to missing service.
-if [[ $(systemctl is-active "${SERVICE}" || true) == "inactive" ]]; then
-    echo " !!! No service to restart!"
-    exit
-else
-    echo " >>> Restarting service..."
-    sudo systemctl restart "${SERVICE}"
-fi
-
-echo " >>> SUCCESS"
