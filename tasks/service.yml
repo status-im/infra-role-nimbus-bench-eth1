@@ -45,12 +45,6 @@
     mode: 0775
   when: nimbus_eth1_benchmark_type == 'short'
 
-- name: 'Create systemd timer for {{ nimbus_eth1_service_name }}.service'
-  template:
-    src: 'nimbus-eth1-{{ nimbus_eth1_benchmark_type }}-benchmark.timer.j2'
-    dest: '/etc/systemd/system/{{ nimbus_eth1_service_name }}.timer'
-    mode: 0644
-
 - name: Create log files
   file:
     path: "{{ item }}"
@@ -64,14 +58,3 @@
 
 - name: Reload systemctl
   command: systemctl daemon-reload
-
-- name: Restart the service
-  service:
-    name: '{{ nimbus_eth1_service_name }}.service'
-    state: 'restarted'
-    enabled: true
-
-- name: Enable the timer
-  systemd:
-    name: '{{ nimbus_eth1_service_name }}.timer'
-    enabled: yes
