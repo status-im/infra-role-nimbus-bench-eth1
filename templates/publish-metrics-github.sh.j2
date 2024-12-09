@@ -4,29 +4,19 @@ set -e
 
 BENCHMARK_FILE_NAME="{{ nimbus_eth1_benchmark_file_name }}"
 BENCHMARK_GIT_REPO="{{ nimbus_eth1_benchmark_git_repo_dir }}"
+NIMBUS_ETH1_GIT_REPO="{{ nimbus_eth1_repo_path }}"
 ENVIRONMENT_LOG_FILE_NAME="{{ nimbus_eth1_environment_log_file_name }}"
 BENCHMARKING_FILE_PATH="${BENCHMARK_GIT_REPO}/${BENCHMARK_FILE_NAME}"
 ISO_TIMESTAMP=$(date +"%Y%m%dT%H%M%S")
-GIT_HASH=$(cd "${BENCHMARK_GIT_REPO}" && git rev-parse --short HEAD)
+GIT_HASH=$(cd "${NIMBUS_ETH1_GIT_REPO}" && git rev-parse --short HEAD)
 BENCHMARKING_TYPE="{{ nimbus_eth1_benchmark_type }}"
 BENCHMARK_DESTINATION="${BENCHMARK_GIT_REPO}/${BENCHMARKING_TYPE}-benchmark/${ISO_TIMESTAMP}_${GIT_HASH}"
 ENVIRONMENT_LOG_FILE_PATH="${BENCHMARK_DESTINATION}/${ENVIRONMENT_LOG_FILE_NAME}"
 BENCHMARKING_SERVICE_LOG_FILE_NAME="{{ nimbus_eth1_service_log_output_name }}"
-BENCHMARKING_SERVICE_ERROR_FILE_NAME="{{ nimbus_eth1_service_log_error_name }}"
 BENCHMARKING_SERVICE_OUTPUT_LOG_FILE="{{ nimbus_eth1_benchmark_log_output_file_path }}"
-BENCHMARKING_SERVICE_ERROR_LOG_FILE="{{ nimbus_eth1_benchmark_log_error_file_path }}"
 NIMBUS_ETH1_BLOCKS_IMPORT_SCRIPT_PATH="{{ nimbus_eth1_blocks_import_script_path }}"
 LATEST_BENCHMARKED_CSV_DIRECTORY=$(find "${BENCHMARK_GIT_REPO}/${BENCHMARKING_TYPE}-benchmark" -maxdepth 1 -type d -printf '%T@ %f\n' 2>/dev/null | sort -nr | head -n 1 | cut -d' ' -f2)
 LATEST_BENCHMARKED_CSV_FILE_PATH="${BENCHMARK_GIT_REPO}/${BENCHMARKING_TYPE}-benchmark/${LATEST_BENCHMARKED_CSV_DIRECTORY}/${BENCHMARK_FILE_NAME}"
-
-function fetchChanges() {
-    echo " >>> Fetching latest changes from nimbus-eth1-benchmarks repo..."
-    # We cannot use "git pull" in here, because history may be changed upstream
-    cd "${BENCHMARK_GIT_REPO}"
-    git fetch
-    git reset --hard "origin/master"
-    cd -
-}
 
 function convert_to_human_readable() {
     local total_ns=$1
@@ -97,8 +87,9 @@ function moveBenchmarkingFileToRepo() {
   echo ">>> copying service output log file to repo"
   cp "${BENCHMARKING_SERVICE_OUTPUT_LOG_FILE}" "${BENCHMARK_DESTINATION}/${BENCHMARKING_SERVICE_LOG_FILE_NAME}"
 
-  echo ">>> copying service error log file to repo"
-  cp "${BENCHMARKING_SERVICE_ERROR_LOG_FILE}" "${BENCHMARK_DESTINATION}/${BENCHMARKING_SERVICE_ERROR_FILE_NAME}"
+  echo ">>> remove service log file"
+  rm "${BENCHMARKING_SERVICE_OUTPUT_LOG_FILE}"
+
 }
 
 function fetchHostInformation () {
@@ -136,6 +127,7 @@ function fetchHostInformation () {
   echo "=========================="
 }
 
+#FIXME: this is broken due to issues with figuring out correct position of last 2 benchmarks
 function compareBenchmarkWithPrevious() {
   echo "=== Comparison of last two benchmarks ==="
   # the python script may fail in case of incomparable benchmarks.
@@ -149,7 +141,6 @@ function generateBenchmarkSummary() {
    {
         fetchHostInformation
         fetchBenchmarkingJobSummary
-        compareBenchmarkWithPrevious
    } >> "${ENVIRONMENT_LOG_FILE_PATH}" 2>&1
 }
 
@@ -161,7 +152,6 @@ function pushChangesToRepo() {
   echo " >>> Pushed benchmark csv to nimbus-eth1-benchmarks repo..."
 }
 
-fetchChanges
 moveBenchmarkingFileToRepo
 generateBenchmarkSummary
 pushChangesToRepo
