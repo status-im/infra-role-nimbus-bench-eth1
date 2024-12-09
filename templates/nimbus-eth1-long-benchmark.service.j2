@@ -14,7 +14,6 @@ StandardError=file:{{ nimbus_eth1_benchmark_log_error_file_path }}
 SyslogLevel=debug
 RuntimeMaxSec=168hr
 TimeoutStartSec=36000
-RemainAfterExit=yes
 
 ExecStartPre={{ nimbus_eth1_build_script }}
 ExecStartPre={{ nimbus_eth1_benchmark_gen_script }}
