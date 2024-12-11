@@ -6,46 +6,64 @@ REPO_URL="{{ nimbus_eth1_repo_url }}"
 BRANCH="{{ nimbus_eth1_repo_branch }}"
 BUILD_DIR="{{ nimbus_eth1_repo_path }}"
 
-function cloneOrFetchRepo() {
-    mkdir -p "${BUILD_DIR}"
+function log() {
+   echo "$(date '+%Y-%m-%d %H:%M:%S') - $*"
+}
 
-    # Check if git repo already exists
-    if [ -d "${BUILD_DIR}/.git" ]; then
-        cd "${BUILD_DIR}"
-        echo ">>> Fetching latest changes..."
-        git fetch
-        git reset --hard "origin/${BRANCH}"
-    else
-        echo ">>> Cloning repo..."
-        git clone -b "${BRANCH}" "${REPO_URL}" "${BUILD_DIR}"
-    fi
+function cloneOrFetchRepo() {
+  log ">>> starting cloneOrFetchRepo() inside build-and-update-nimbus.sh"
+
+  mkdir -p "${BUILD_DIR}"
+
+  # Check if git repo already exists
+  if [ -d "${BUILD_DIR}/.git" ]; then
+      cd "${BUILD_DIR}"
+      log ">>> Fetching latest changes..."
+      git fetch
+      git reset --hard "origin/${BRANCH}"
+  else
+      log ">>> Cloning repo..."
+      git clone -b "${BRANCH}" "${REPO_URL}" "${BUILD_DIR}"
+  fi
+
+  log ">>> completed cloneOrFetchRepo()"
 }
 
 function buildBinaries() {
-    cd "${BUILD_DIR}"
-    COMMIT=$(git rev-parse --short=8 HEAD)
+  log ">>> starting buildBinaries()"
+  cd "${BUILD_DIR}"
+  COMMIT=$(git rev-parse --short=8 HEAD)
 
-    if [[ -f "build/nimbus_execution_client_${COMMIT}" ]]; then
-        echo ">>> Binaries already exist, no need to build!"
-        exit
-    fi
+  if [[ -f "build/nimbus_execution_client_${COMMIT}" ]]; then
+      log ">>> Binaries already exist for commit ${COMMIT}, no need to build a new nimbus binary!"
+      exit
+  fi
 
-    echo " >>> Building binaries..."
+  log ">>> Building binaries..."
 
-    make -j{{ ansible_processor_vcpus }} update
-    make -j{{ ansible_processor_vcpus }} nimbus \
-        LOG_LEVEL="TRACE" NIMFLAGS="{{ nimbus_eth1_build_nim_flags | join(" ") }}"
+  log ">>> make -j{{ ansible_processor_vcpus }} update"
+  make -j{{ ansible_processor_vcpus }} update
 
-    # Rename binaries to match commit they were built from.
-    mv "build/nimbus_execution_client" "build/nimbus_execution_client_${COMMIT}"
+  log ">>> make -j{{ ansible_processor_vcpus }} nimbus_execution_client LOG_LEVEL=TRACE NIMFLAGS={{ nimbus_eth1_build_nim_flags | join(" ") }}"
+  make -j{{ ansible_processor_vcpus }} nimbus_execution_client \
+      LOG_LEVEL="TRACE" NIMFLAGS="{{ nimbus_eth1_build_nim_flags | join(" ") }}"
 
-    # Create a symbolic link to the latest version
-    ln -frs build/nimbus_execution_client_${COMMIT} build/nimbus_execution_client
+  # Rename binaries to match commit they were built from.
+  log ">>> renaming binaries to match commit they were built from"
+  log "mv build/nimbus_execution_client build/nimbus_execution_client_${COMMIT}"
+  mv "build/nimbus_execution_client" "build/nimbus_execution_client_${COMMIT}"
 
-    # Delete copies that are older than N days
-    find build -mtime +{{ nimbus_eth1_build_days_kept }} -exec rm '{}' \+
+  # Create a symbolic link to the latest version
+  log "creating a symbolic link to the latest version"
+  log "ln -frs build/nimbus_execution_client_${COMMIT} build/nimbus_execution_client"
+  ln -frs build/nimbus_execution_client_${COMMIT} build/nimbus_execution_client
 
-    echo " >>> Building Binaries stage complete ..."
+  # Delete copies that are older than N days
+  log "deleting copies that are older than N days"
+  log "find build -mtime +{{ nimbus_eth1_build_days_kept }} -exec rm '{}' \+"
+  find build -mtime +{{ nimbus_eth1_build_days_kept }} -exec rm '{}' \+
+
+  log ">>> buildBinaries() complete"
 }
 
 #-------------------------------------------------------------------------------

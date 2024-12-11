@@ -11,39 +11,57 @@ NIMBUS_ETH1_BENCHMARKING_DIR="{{ nimbus_eth1_benchmark_dir }}"
 NIMBUS_ETHI_BENCHMARKS_REPO="{{ nimbus_eth1_benchmark_git_repo_dir }}"
 GIT_HASH=$(cd "${NIMBUS_ETH1_REPO}" && git rev-parse --short=8 HEAD)
 
+function log() {
+   echo "$(date '+%Y-%m-%d %H:%M:%S') - $*"
+}
 
 function cleanBenchmarkDir() {
+  log ">>> starting cleanBenchmarkDir() inside database-generation-and-cleanup.sh"
+
   if [ ! -d "${NIMBUS_ETHI_BENCHMARKS_REPO}" ]; then
-    echo ">>> Benchmark directory ${NIMBUS_ETHI_BENCHMARKS_REPO} does not exist, skipping cleanup"
+    log ">>> Benchmark directory ${NIMBUS_ETHI_BENCHMARKS_REPO} does not exist, skipping cleanup"
     return 0
   fi
 
   cd "${NIMBUS_ETHI_BENCHMARKS_REPO}"
   git clean -df
   cd -
+
+  log ">>> completed cleanBenchmarkDir()"
 }
 
 function regenerateNimbusDatabaseFromTemplate() {
-  echo ">>> Cleaning up existing database files if any"
-  rm -rf "$NIMBUS_ETH1_DB_DIR/*"
+  log ">>> starting regenerateNimbusDatabaseFromTemplate()"
 
-  echo ">>> Creating ${NIMBUS_ETH1_DB_DIR} with permissions"
-  mkdir -p "$NIMBUS_ETH1_DB_DIR"
-  chmod 0755 "$NIMBUS_ETH1_DB_DIR"
+  log ">>> Cleaning up existing database files with rm -rf ${NIMBUS_ETH1_DB_DIR}/*"
+  log "rm -rf ${NIMBUS_ETH1_DB_DIR:?}/*"
+  rm -rf "${NIMBUS_ETH1_DB_DIR:?}/*"
 
-  echo ">>> Copying template db, This might take a while ..."
-  cp -r "$NIMBUS_ETH1_TEMPLATE_DB/." "$NIMBUS_ETH1_DB_DIR/"
+  log ">>> Creating ${NIMBUS_ETH1_DB_DIR} with permissions"
+  log "mkdir -p ${NIMBUS_ETH1_DB_DIR}"
+  log "chmod 0755 ${NIMBUS_ETH1_DB_DIR}"
+  mkdir -p "${NIMBUS_ETH1_DB_DIR}"
+  chmod 0755 "${NIMBUS_ETH1_DB_DIR}"
 
-  echo ">>> Template db copied"
-  chown -R "$NIMBUS_ETH1_SERVICE_USER:$NIMBUS_ETH1_SERVICE_GROUP" "$NIMBUS_ETH1_DB_DIR"
+  log ">>> Copying template db into nimbus data directory"
+  log "cp -r ${NIMBUS_ETH1_TEMPLATE_DB}/. $NIMBUS_ETH1_DB_DIR/"
+  cp -r "${NIMBUS_ETH1_TEMPLATE_DB}/." "$NIMBUS_ETH1_DB_DIR/"
+
+  log ">>> Template db copied"
+  log "chown -R ${NIMBUS_ETH1_SERVICE_USER}:${NIMBUS_ETH1_SERVICE_GROUP} ${NIMBUS_ETH1_DB_DIR}"
+  chown -R "${NIMBUS_ETH1_SERVICE_USER}:${NIMBUS_ETH1_SERVICE_GROUP}" "${NIMBUS_ETH1_DB_DIR}"
+
+  log ">>> completed regenerateNimbusDatabaseFromTemplate()"
 }
 
 cleanBenchmarkDir
 
-# skip if we have already executed benchmarking for this commit
+log "skip regenerateNimbusDatabaseFromTemplate() if we have already executed benchmarking for the commit ${GIT_HASH}"
+log "find ${NIMBUS_ETH1_BENCHMARKING_DIR} -type f -name *${GIT_HASH}* 2>/dev/null | wc -l"
+
 BENCHMARK_EXISTS=$(find "${NIMBUS_ETH1_BENCHMARKING_DIR}" -type f -name "*${GIT_HASH}*" 2>/dev/null | wc -l)
-if [ $BENCHMARK_EXISTS -gt 0 ]; then
-    echo ">>> Benchmark for ${GIT_HASH} already exists, skipping this import!"
+if [ "${BENCHMARK_EXISTS}" -gt 0 ]; then
+    log ">>> Benchmark for ${GIT_HASH} already exists, skipping this import!"
     exit 1
 fi
 
