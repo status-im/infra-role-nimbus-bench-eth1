@@ -80,7 +80,6 @@ function fetchBenchmarkingJobSummary () {
   BENCHMARK_RUN_COMMAND=$(systemctl cat nimbus-eth1-mainnet-master-short-benchmark.service | sed -n '/^ExecStart=/,/[^\\]$/p' | sed 's/^ExecStart=//')
   echo ">>> Benchmarking was run using ${BENCHMARK_RUN_COMMAND}"
   echo "=========================="
-  log ">>> completed fetchBenchmarkingJobSummary()"
 }
 
 function moveBenchmarkingFileToRepo() {
@@ -141,13 +140,14 @@ function compareBenchmarkWithPrevious() {
 }
 
 function moveServiceLogToRepo() {
+  # we intentionally log before we execute because we want these 4 commands to be part of the logs before we reset them
   log ">>> copying import systemd service log file to benchmarks repo"
   log "cp ${BENCHMARKING_SERVICE_OUTPUT_LOG_FILE} ${BENCHMARK_DESTINATION}/${BENCHMARKING_SERVICE_LOG_FILE_NAME}"
-  cp "${BENCHMARKING_SERVICE_OUTPUT_LOG_FILE}" "${BENCHMARK_DESTINATION}/${BENCHMARKING_SERVICE_LOG_FILE_NAME}"
-
-  # we can't delete this file since its needed for next runs
   log ">>> truncating import systemd service log file"
   log "cat /dev/null > ${BENCHMARKING_SERVICE_OUTPUT_LOG_FILE}"
+
+  cp "${BENCHMARKING_SERVICE_OUTPUT_LOG_FILE}" "${BENCHMARK_DESTINATION}/${BENCHMARKING_SERVICE_LOG_FILE_NAME}"
+  # we can't delete this file since its needed for next runs
   cat /dev/null > "${BENCHMARKING_SERVICE_OUTPUT_LOG_FILE}"
 }
 
@@ -156,8 +156,9 @@ function generateBenchmarkSummary() {
    {
         fetchHostInformation
         fetchBenchmarkingJobSummary
-        moveServiceLogToRepo
    } >> "${ENVIRONMENT_LOG_FILE_PATH}" 2>&1
+
+   moveServiceLogToRepo
 }
 
 function pushChangesToRepo() {

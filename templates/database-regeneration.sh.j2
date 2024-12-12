@@ -8,26 +8,10 @@ NIMBUS_ETH1_SERVICE_USER="{{ nimbus_eth1_service_user }}"
 NIMBUS_ETH1_SERVICE_GROUP="{{ nimbus_eth1_service_group }}"
 NIMBUS_ETH1_REPO="{{ nimbus_eth1_repo_path }}"
 NIMBUS_ETH1_BENCHMARKING_DIR="{{ nimbus_eth1_benchmark_dir }}"
-NIMBUS_ETHI_BENCHMARKS_REPO="{{ nimbus_eth1_benchmark_git_repo_dir }}"
 GIT_HASH=$(cd "${NIMBUS_ETH1_REPO}" && git rev-parse --short=8 HEAD)
 
 function log() {
    echo "$(date '+%Y-%m-%d %H:%M:%S') - $*"
-}
-
-function cleanBenchmarkDir() {
-  log ">>> starting cleanBenchmarkDir() inside database-generation-and-cleanup.sh"
-
-  if [ ! -d "${NIMBUS_ETHI_BENCHMARKS_REPO}" ]; then
-    log ">>> Benchmark directory ${NIMBUS_ETHI_BENCHMARKS_REPO} does not exist, skipping cleanup"
-    return 0
-  fi
-
-  cd "${NIMBUS_ETHI_BENCHMARKS_REPO}"
-  git clean -df
-  cd -
-
-  log ">>> completed cleanBenchmarkDir()"
 }
 
 function regenerateNimbusDatabaseFromTemplate() {
@@ -53,8 +37,6 @@ function regenerateNimbusDatabaseFromTemplate() {
 
   log ">>> completed regenerateNimbusDatabaseFromTemplate()"
 }
-
-cleanBenchmarkDir
 
 log "skip regenerateNimbusDatabaseFromTemplate() if we have already executed benchmarking for the commit ${GIT_HASH}"
 log "find ${NIMBUS_ETH1_BENCHMARKING_DIR} -type f -name *${GIT_HASH}* 2>/dev/null | wc -l"

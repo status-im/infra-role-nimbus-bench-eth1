@@ -18,6 +18,11 @@ function cloneOrFetchRepo() {
   # Check if git repo already exists
   if [ -d "${BUILD_DIR}/.git" ]; then
       cd "${BUILD_DIR}"
+      log ">>> cleaning repo"
+      log "git clean -fdx > /dev/null 2>&1"
+      log "git submodule foreach --recursive git clean -fdx > /dev/null 2>&1"
+      git clean -fdx > /dev/null 2>&1
+      git submodule foreach --recursive git clean -fdx > /dev/null 2>&1
       log ">>> Fetching latest changes..."
       git fetch
       git reset --hard "origin/${BRANCH}"
