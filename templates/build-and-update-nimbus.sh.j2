@@ -14,6 +14,7 @@ function cloneOrFetchRepo() {
   log ">>> starting cloneOrFetchRepo() inside build-and-update-nimbus.sh"
 
   mkdir -p "${BUILD_DIR}"
+  chmod 775 "${BUILD_DIR}"
 
   # Check if git repo already exists
   if [ -d "${BUILD_DIR}/.git" ]; then
@@ -49,9 +50,9 @@ function buildBinaries() {
   log ">>> make -j{{ ansible_processor_vcpus }} update"
   make -j{{ ansible_processor_vcpus }} update
 
-  log ">>> make -j{{ ansible_processor_vcpus }} nimbus_execution_client LOG_LEVEL=TRACE NIMFLAGS={{ nimbus_eth1_build_nim_flags | join(" ") }}"
+  log ">>> make -j{{ ansible_processor_vcpus }} nimbus_execution_client LOG_LEVEL={{ nimbus_eth1_log_level }} NIMFLAGS={{ nimbus_eth1_build_nim_flags | join(" ") }}"
   make -j{{ ansible_processor_vcpus }} nimbus_execution_client \
-      LOG_LEVEL="TRACE" NIMFLAGS="{{ nimbus_eth1_build_nim_flags | join(" ") }}"
+      LOG_LEVEL="{{ nimbus_eth1_log_level }}" NIMFLAGS="{{ nimbus_eth1_build_nim_flags | join(" ") }}"
 
   # Rename binaries to match commit they were built from.
   log ">>> renaming binaries to match commit they were built from"

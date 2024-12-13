@@ -18,6 +18,7 @@ NIMBUS_ETH1_BLOCKS_IMPORT_SCRIPT_PATH="{{ nimbus_eth1_blocks_import_script_path 
 LATEST_BENCHMARKED_CSV_DIRECTORY=$(find "${BENCHMARK_GIT_REPO}/${BENCHMARKING_TYPE}-benchmark" -maxdepth 1 -type d -printf '%T@ %f\n' 2>/dev/null | sort -nr | head -n 1 | cut -d' ' -f2)
 LATEST_BENCHMARKED_CSV_FILE_PATH="${BENCHMARK_GIT_REPO}/${BENCHMARKING_TYPE}-benchmark/${LATEST_BENCHMARKED_CSV_DIRECTORY}/${BENCHMARK_FILE_NAME}"
 
+
 function log() {
    echo "$(date '+%Y-%m-%d %H:%M:%S') - $*"
 }
@@ -50,7 +51,6 @@ function convert_to_human_readable() {
 }
 
 function fetchBenchmarkingJobSummary () {
-  log ">>> starting fetchBenchmarkingJobSummary()"
   local total_time
   total_time=$(awk -F',' '
       NR>1 { # Skip header row
@@ -130,12 +130,32 @@ function fetchHostInformation () {
   echo "=========================="
 }
 
-#FIXME: this is broken due to issues with figuring out correct position of last 2 benchmarks
 function compareBenchmarkWithPrevious() {
   log "=== Comparison of last two benchmarks ==="
-  # the python script may fail in case of incomparable benchmarks.
-  # in such cases we would just like to store the logs and carry on.
-  python "${NIMBUS_ETH1_BLOCKS_IMPORT_SCRIPT_PATH}" "${BENCHMARKING_FILE_PATH}" "${LATEST_BENCHMARKED_CSV_FILE_PATH}" 2>&1 || true
+
+  CURRENT_BENCHMARK_TYPE_DIR="${BENCHMARK_GIT_REPO}/${BENCHMARKING_TYPE}-benchmark"
+
+  if [ ! -d "${CURRENT_BENCHMARK_TYPE_DIR}" ]; then
+    log "${CURRENT_BENCHMARK_TYPE_DIR} does not exist, skipping compareBenchmarkWithPrevious()"
+    exit
+  fi
+
+  if [[ ! "$(find "${CURRENT_BENCHMARK_TYPE_DIR}" -mindepth 1 -maxdepth 1 -type d | wc -l)" -gt 2 ]]; then
+      log "${CURRENT_BENCHMARK_TYPE_DIR} does not contain 2 or more benchmark CSVs, skipping compareBenchmarkWithPrevious()"
+      exit
+  fi
+
+  CURRENT_BENCHMARK_DIR_NAME=$(find "${CURRENT_BENCHMARK_TYPE_DIR}" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %f\n' 2>/dev/null | sort -nr | head -n 1 | cut -d' ' -f2)
+  PREVIOUS_BENCHMARK_DIR_NAME=$(find "${CURRENT_BENCHMARK_TYPE_DIR}" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %f\n' 2>/dev/null | sort -nr | head -n 2 | tail -n 1 | cut -d' ' -f2)
+
+
+  CURRENT_BENCHMARK_CSV_PATH="${CURRENT_BENCHMARK_TYPE_DIR}/${CURRENT_BENCHMARK_DIR_NAME}/${BENCHMARK_FILE_NAME}"
+  PREVIOUS_BENCHMARK_CSV_PATH="${CURRENT_BENCHMARK_TYPE_DIR}/${PREVIOUS_BENCHMARK_DIR_NAME}/${BENCHMARK_FILE_NAME}"
+
+  log "python ${NIMBUS_ETH1_BLOCKS_IMPORT_SCRIPT_PATH} ${CURRENT_BENCHMARK_CSV_PATH} ${PREVIOUS_BENCHMARK_CSV_PATH} 2>&1 || true"
+
+  python "${NIMBUS_ETH1_BLOCKS_IMPORT_SCRIPT_PATH}" "${CURRENT_BENCHMARK_CSV_PATH}" "${PREVIOUS_BENCHMARK_CSV_PATH}" 2>&1 || true
+
   log "=========================="
 }
 
@@ -156,6 +176,7 @@ function generateBenchmarkSummary() {
    {
         fetchHostInformation
         fetchBenchmarkingJobSummary
+        compareBenchmarkWithPrevious
    } >> "${ENVIRONMENT_LOG_FILE_PATH}" 2>&1
 
    moveServiceLogToRepo
@@ -164,7 +185,7 @@ function generateBenchmarkSummary() {
 function pushChangesToRepo() {
   cd "${BENCHMARK_DESTINATION}"
   git add .
-  git commit -m "benchmark: publish metrics and report" > /dev/null 2>&1
+  git commit -m "{{ nimbus_eth1_benchmark_publish_commit_message }}" > /dev/null 2>&1
   git push > /dev/null 2>&1
 }
 

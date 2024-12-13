@@ -12,56 +12,28 @@
     dest: '/etc/systemd/system/{{ nimbus_eth1_service_name }}.service'
     mode: 0644
 
-- name: Create build script
+- name: Create Service Scripts
   template:
-    src: 'build.sh.j2'
-    dest: '{{ nimbus_eth1_build_script }}'
+    src: "{{ item }}.j2"
+    dest: "{{ nimbus_eth1_service_scripts_base }}/{{ item }}"
     owner: '{{ nimbus_eth1_service_user }}'
     group: '{{ nimbus_eth1_service_group }}'
     mode: 0775
+  loop:
+    - '{{ nimbus_eth1_build_script }}'
+    - '{{ nimbus_eth1_publish_script }}'
+    - '{{ nimbus_eth1_db_gen_script }}'
+    - '{{ nimbus_eth1_import_checkpoint_script }}'
+    - '{{ nimbus_eth1_benchmarks_cleanup_script }}'
+    - '{{ nimbus_eth1_benchmark_gen_script }}'
 
-- name: Create benchmarking repo fetching script
-  template:
-    src: 'fetch-benchmarks.sh.j2'
-    dest: '{{ nimbus_eth1_benchmark_gen_script }}'
-    owner: '{{ nimbus_eth1_service_user }}'
-    group: '{{ nimbus_eth1_service_group }}'
-    mode: 0775
-
-- name: Create metrics github publish script
-  template:
-    src: 'publish-metrics-github.sh.j2'
-    dest: '{{ nimbus_eth1_publish_script }}'
-    owner: '{{ nimbus_eth1_service_user }}'
-    group: '{{ nimbus_eth1_service_group }}'
-    mode: 0775
-
-- name: Create benchmarks cleanup script
-  template:
-    src: 'benchmarks-cleanup.sh.j2'
-    dest: '{{ nimbus_eth1_benchmarks_cleanup_script }}'
-    owner: '{{ nimbus_eth1_service_user }}'
-    group: '{{ nimbus_eth1_service_group }}'
-    mode: 0775
-
-- name: Create Database regeneration script
-  template:
-    src: 'database-regeneration.sh.j2'
-    dest: '{{ nimbus_eth1_db_gen_script }}'
-    owner: '{{ nimbus_eth1_service_user }}'
-    group: '{{ nimbus_eth1_service_group }}'
-    mode: 0775
-  when: nimbus_eth1_benchmark_type == 'short'
-
-- name: Create log files
+- name: Create log file
   file:
-    path: "{{ item }}"
+    path: "{{ nimbus_eth1_benchmark_log_output_file_path }}"
     state: touch
     owner: '{{ nimbus_eth1_service_user }}'
     group: '{{ nimbus_eth1_service_group }}'
     mode: '0644'
-  loop:
-    - '{{ nimbus_eth1_benchmark_log_output_file_path }}'
 
 - name: Reload systemctl
   command: systemctl daemon-reload

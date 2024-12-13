@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# vim: ft=sh
+set -e
+
+NIMBUS_ETH1_REPO="{{ nimbus_eth1_repo_path }}"
+NIMBUS_ETH1_BENCHMARKING_DIR="{{ nimbus_eth1_benchmark_dir }}"
+GIT_HASH=$(cd "${NIMBUS_ETH1_REPO}" && git rev-parse --short=8 HEAD)
+
+function log() {
+   echo "$(date '+%Y-%m-%d %H:%M:%S') - $*"
+}
+
+log "skip copyTemplateDatabase() if we have already executed benchmarking for the commit ${GIT_HASH}"
+log "find ${NIMBUS_ETH1_BENCHMARKING_DIR} -type d -name *${GIT_HASH}* 2>/dev/null | wc -l"
+
+BENCHMARK_EXISTS=$(find "${NIMBUS_ETH1_BENCHMARKING_DIR}" -type d -name "*${GIT_HASH}*" 2>/dev/null | wc -l)
+#if [ "${BENCHMARK_EXISTS}" -gt 0 ]; then
+#    log ">>> Benchmark for ${GIT_HASH} already exists, skipping this import!"
+#    exit 1
+#fi
+
+log "BENCHMARK_EXISTS=${BENCHMARK_EXISTS}"
