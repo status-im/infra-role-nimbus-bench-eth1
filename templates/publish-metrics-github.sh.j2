@@ -15,8 +15,6 @@ ENVIRONMENT_LOG_FILE_PATH="${BENCHMARK_DESTINATION}/${ENVIRONMENT_LOG_FILE_NAME}
 BENCHMARKING_SERVICE_LOG_FILE_NAME="{{ nimbus_eth1_service_log_output_name }}"
 BENCHMARKING_SERVICE_OUTPUT_LOG_FILE="{{ nimbus_eth1_benchmark_log_output_file_path }}"
 NIMBUS_ETH1_BLOCKS_IMPORT_SCRIPT_PATH="{{ nimbus_eth1_blocks_import_script_path }}"
-LATEST_BENCHMARKED_CSV_DIRECTORY=$(find "${BENCHMARK_GIT_REPO}/${BENCHMARKING_TYPE}-benchmark" -maxdepth 1 -type d -printf '%T@ %f\n' 2>/dev/null | sort -nr | head -n 1 | cut -d' ' -f2)
-LATEST_BENCHMARKED_CSV_FILE_PATH="${BENCHMARK_GIT_REPO}/${BENCHMARKING_TYPE}-benchmark/${LATEST_BENCHMARKED_CSV_DIRECTORY}/${BENCHMARK_FILE_NAME}"
 
 
 function log() {
@@ -133,28 +131,43 @@ function fetchHostInformation () {
 function compareBenchmarkWithPrevious() {
   log "=== Comparison of last two benchmarks ==="
 
+  VENV_PATH="${NIMBUS_ETH1_GIT_REPO}/stats"
+
   CURRENT_BENCHMARK_TYPE_DIR="${BENCHMARK_GIT_REPO}/${BENCHMARKING_TYPE}-benchmark"
 
   if [ ! -d "${CURRENT_BENCHMARK_TYPE_DIR}" ]; then
     log "${CURRENT_BENCHMARK_TYPE_DIR} does not exist, skipping compareBenchmarkWithPrevious()"
-    exit
+    return
   fi
 
   if [[ ! "$(find "${CURRENT_BENCHMARK_TYPE_DIR}" -mindepth 1 -maxdepth 1 -type d | wc -l)" -gt 2 ]]; then
-      log "${CURRENT_BENCHMARK_TYPE_DIR} does not contain 2 or more benchmark CSVs, skipping compareBenchmarkWithPrevious()"
-      exit
+    log "${CURRENT_BENCHMARK_TYPE_DIR} does not contain 2 or more benchmark CSVs, skipping compareBenchmarkWithPrevious()"
+    return
   fi
 
   CURRENT_BENCHMARK_DIR_NAME=$(find "${CURRENT_BENCHMARK_TYPE_DIR}" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %f\n' 2>/dev/null | sort -nr | head -n 1 | cut -d' ' -f2)
   PREVIOUS_BENCHMARK_DIR_NAME=$(find "${CURRENT_BENCHMARK_TYPE_DIR}" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %f\n' 2>/dev/null | sort -nr | head -n 2 | tail -n 1 | cut -d' ' -f2)
 
-
   CURRENT_BENCHMARK_CSV_PATH="${CURRENT_BENCHMARK_TYPE_DIR}/${CURRENT_BENCHMARK_DIR_NAME}/${BENCHMARK_FILE_NAME}"
   PREVIOUS_BENCHMARK_CSV_PATH="${CURRENT_BENCHMARK_TYPE_DIR}/${PREVIOUS_BENCHMARK_DIR_NAME}/${BENCHMARK_FILE_NAME}"
+
+  if [ ! -d "${VENV_PATH}" ]; then
+    python -m venv "${VENV_PATH}"
+  fi
+
+  # Activate virtual environment
+  source "${VENV_PATH}/bin/activate"
+
+  if [ -f "${NIMBUS_ETH1_GIT_REPO}/scripts/requirements.txt" ]; then
+    pip install -r "${NIMBUS_ETH1_GIT_REPO}/scripts/requirements.txt" > /dev/null 2>&1
+  fi
 
   log "python ${NIMBUS_ETH1_BLOCKS_IMPORT_SCRIPT_PATH} ${CURRENT_BENCHMARK_CSV_PATH} ${PREVIOUS_BENCHMARK_CSV_PATH} 2>&1 || true"
 
   python "${NIMBUS_ETH1_BLOCKS_IMPORT_SCRIPT_PATH}" "${CURRENT_BENCHMARK_CSV_PATH}" "${PREVIOUS_BENCHMARK_CSV_PATH}" 2>&1 || true
+
+  # Deactivate virtual environment
+  deactivate
 
   log "=========================="
 }
