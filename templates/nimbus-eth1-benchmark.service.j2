@@ -1,5 +1,5 @@
 [Unit]
-Description=Nimbus Eth1 short import benchmarking service (24hrs)
+Description=Nimbus Eth1 {{ nimbus_eth1_benchmark_type }} import benchmarking service ({{ "24hrs" if nimbus_eth1_benchmark_type == "short" else "1 week" }})
 Documentation=https://github.com/status-im/nimbus-eth1
 Requires=network-online.target
 After=network-online.target
@@ -7,25 +7,29 @@ After=network-online.target
 [Service]
 User={{ nimbus_eth1_service_user }}
 Group={{ nimbus_eth1_service_group }}
-SyslogIdentifier=nimbus-eth1-{{ nimbus_eth1_network }}-short-benchmark
+SyslogIdentifier=nimbus-eth1-{{ nimbus_eth1_network }}-{{ nimbus_eth1_benchmark_type }}-benchmark
 StandardOutput=append:{{ nimbus_eth1_benchmark_log_output_file_path }}
 StandardError=append:{{ nimbus_eth1_benchmark_log_output_file_path }}
 SyslogLevel={{ nimbus_eth1_log_level }}
-RuntimeMaxSec=24hr
+RuntimeMaxSec={{ "24hr" if nimbus_eth1_benchmark_type == "short" else "168hr" }}
 TimeoutStartSec=36000
 
 ExecStartPre={{ nimbus_eth1_service_scripts_base }}/{{ nimbus_eth1_benchmarks_cleanup_script }}
 ExecStartPre={{ nimbus_eth1_service_scripts_base }}/{{ nimbus_eth1_build_script }}
 ExecStartPre={{ nimbus_eth1_service_scripts_base }}/{{ nimbus_eth1_import_checkpoint_script }}
+{% if nimbus_eth1_benchmark_type == "short" %}
 ExecStartPre={{ nimbus_eth1_service_scripts_base }}/{{ nimbus_eth1_db_gen_script }}
+{% endif %}
 ExecStartPre={{ nimbus_eth1_service_scripts_base }}/{{ nimbus_eth1_benchmark_gen_script }}
 ExecStart={{ nimbus_eth1_repo_path }}/build/nimbus_execution_client import \
     --network={{ nimbus_eth1_network }} \
-    --max-blocks={{ nimbus_eth1_max_blocks_to_import }} \
-    --log-level=INFO \
     --data-dir='{{ nimbus_eth1_db_dir }}' \
     --era1-dir={{ nimbus_eth1_era1_dir | mandatory }} \
     --era-dir={{ nimbus_eth1_era_dir | mandatory }} \
+    --log-level=INFO \
+{% if nimbus_eth1_benchmark_type == "short" %}
+    --max-blocks={{ nimbus_eth1_max_blocks_to_import }} \
+{% endif %}
     --debug-csv-stats={{nimbus_eth1_benchmark_git_repo_dir}}/{{ nimbus_eth1_benchmark_file_name }}
 ExecStopPost={{ nimbus_eth1_service_scripts_base }}/{{ nimbus_eth1_publish_script }}
 Restart=always

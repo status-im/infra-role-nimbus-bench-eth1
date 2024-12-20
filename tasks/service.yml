@@ -8,7 +8,7 @@
 
 - name: Create systemd Unit file
   template:
-    src: 'nimbus-eth1-{{ nimbus_eth1_benchmark_type }}-benchmark.service.j2'
+    src: 'nimbus-eth1-benchmark.service.j2'
     dest: '/etc/systemd/system/{{ nimbus_eth1_service_name }}.service'
     mode: 0644
 
