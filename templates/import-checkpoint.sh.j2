@@ -13,7 +13,7 @@ function log() {
 log "skip copyTemplateDatabase() if we have already executed benchmarking for the commit ${GIT_HASH}"
 log "find ${NIMBUS_ETH1_BENCHMARKING_DIR} -type d -name *${GIT_HASH}* 2>/dev/null | wc -l"
 
-BENCHMARK_EXISTS=$(find "${NIMBUS_ETH1_BENCHMARKING_DIR}" -type d -name "*${GIT_HASH}*" 2>/dev/null | wc -l)
+BENCHMARK_EXISTS=$(find "${NIMBUS_ETH1_BENCHMARKING_DIR}" -type d -name '*'"${GIT_HASH}"'*'  2>/dev/null | wc -l)
 if [ "${BENCHMARK_EXISTS}" -gt 0 ]; then
     log ">>> Benchmark for ${GIT_HASH} already exists, skipping this import!"
     exit 1
