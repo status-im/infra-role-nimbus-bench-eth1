@@ -39,10 +39,10 @@ nimbus_eth1_network: 'mainnet'
 
 # Debug
 #nimbus_eth1_max_blocks_to_import: 5000
-#nimbus_eth1_benchmark_publish_commit_message: 'debug: publish metrics and report for 5000 blocks'
+#nimbus_eth1_benchmark_publish_commit_message: 'debug: publish {{ nimbus_eth1_benchmark_type }}-benchmark metrics and report for 5000 blocks'
 
 nimbus_eth1_max_blocks_to_import: 1000000
-nimbus_eth1_benchmark_publish_commit_message: 'benchmark: publish metrics and report'
+nimbus_eth1_benchmark_publish_commit_message: '{{ nimbus_eth1_benchmark_type }}benchmark: publish metrics and report'
 
 # Build
 nimbus_eth1_build_days_kept: 3
