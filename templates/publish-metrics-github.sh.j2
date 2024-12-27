@@ -201,6 +201,7 @@ function generateBenchmarkSummary() {
 
 function pushChangesToRepo() {
   cd "${BENCHMARK_DESTINATION}"
+  git pull --rebase
   git add .
   git commit -m "{{ nimbus_eth1_benchmark_publish_commit_message }}"
   git push
