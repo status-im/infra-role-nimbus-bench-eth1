@@ -79,6 +79,11 @@ function fetchBenchmarkingJobSummary() {
 function moveBenchmarkingFileToRepo() {
   echo ">>> starting moveBenchmarkingFileToRepo() inside publish-metrics-github.sh"
 
+  if [[ ! -f "${BENCHMARKING_FILE_PATH}" ]]; then
+    echo "${BENCHMARKING_FILE_PATH} does not exist, skipping github publish stage"
+    exit 1
+  fi
+
   echo ">>> mkdir -p ${BENCHMARK_DESTINATION}"
   mkdir -p "${BENCHMARK_DESTINATION}"
 
