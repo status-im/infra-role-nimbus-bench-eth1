@@ -43,7 +43,7 @@ nimbus_eth1_network: 'mainnet'
 nimbus_eth1_debug: 'false'
 
 nimbus_eth1_max_blocks_to_import: 1000000
-nimbus_eth1_benchmark_publish_commit_message: '{{ nimbus_eth1_benchmark_type }}benchmark: publish metrics and report'
+nimbus_eth1_benchmark_publish_commit_message: '{{ nimbus_eth1_benchmark_type }}-benchmark: publish metrics and report'
 
 # Build
 nimbus_eth1_build_days_kept: 3
