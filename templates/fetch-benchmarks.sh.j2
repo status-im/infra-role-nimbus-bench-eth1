@@ -7,30 +7,34 @@ BENCHMARKS_REPO_URL="{{ nimbus_eth1_benchmarks_git_repo_url }}"
 NIMBUS_ETH1_SERVICE_USER="{{ nimbus_eth1_service_user }}"
 NIMBUS_ETH1_SERVICE_GROUP="{{ nimbus_eth1_service_group }}"
 
-function log() {
-   echo "$(date '+%Y-%m-%d %H:%M:%S') - $*"
-}
-
 function cloneOrFetchRepo() {
-  log ">>> starting cloneOrFetchRepo() inside fetch-benchmarks.sh"
+  echo ">>> starting cloneOrFetchRepo() inside fetch-benchmarks.sh"
 
-  log ">>> creating directory ${BENCHMARKS_DIR_PATH}"
+  echo "mkdir -p ${BENCHMARKS_DIR_PATH}"
   mkdir -p "${BENCHMARKS_DIR_PATH}"
 
   # Check if git repo already exists
   if [ -d "${BENCHMARKS_DIR_PATH}/.git" ]; then
-      cd "${BENCHMARKS_DIR_PATH}"
-      log ">>> Fetching latest benchmarks from github"
-      git fetch
-      git reset --hard "origin/master"
+    echo ">>> Fetching latest benchmarks from github"
+
+    echo "cd ${BENCHMARKS_DIR_PATH}"
+    echo "git fetch"
+    echo "git reset --hard origin/master"
+
+    cd "${BENCHMARKS_DIR_PATH}"
+    git fetch
+    git reset --hard "origin/master"
   else
-      log ">>> Cloning benchmarks"
-      git clone -b "master" "${BENCHMARKS_REPO_URL}" "${BENCHMARKS_DIR_PATH}"
+    echo ">>> Cloning benchmarks"
+
+    echo "git clone -b master ${BENCHMARKS_REPO_URL} ${BENCHMARKS_DIR_PATH}"
+    git clone -b "master" "${BENCHMARKS_REPO_URL}" "${BENCHMARKS_DIR_PATH}"
   fi
 
+  echo "chown -R $NIMBUS_ETH1_SERVICE_USER:$NIMBUS_ETH1_SERVICE_GROUP $BENCHMARKS_DIR_PATH"
   chown -R "$NIMBUS_ETH1_SERVICE_USER:$NIMBUS_ETH1_SERVICE_GROUP" "$BENCHMARKS_DIR_PATH"
 
-  log ">>> completed cloneOrFetchRepo()"
+  echo ">>> completed cloneOrFetchRepo()"
 }
 
 cloneOrFetchRepo

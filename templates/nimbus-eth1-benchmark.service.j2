@@ -8,8 +8,7 @@ After=network-online.target
 User={{ nimbus_eth1_service_user }}
 Group={{ nimbus_eth1_service_group }}
 SyslogIdentifier=nimbus-eth1-{{ nimbus_eth1_network }}-{{ nimbus_eth1_benchmark_type }}-benchmark
-StandardOutput=append:{{ nimbus_eth1_benchmark_log_output_file_path }}
-StandardError=append:{{ nimbus_eth1_benchmark_log_output_file_path }}
+SyslogFacility=local6
 SyslogLevel={{ nimbus_eth1_log_level }}
 RuntimeMaxSec={{ "24hr" if nimbus_eth1_benchmark_type == "short" else "168hr" }}
 TimeoutStartSec=36000

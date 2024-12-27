@@ -4,23 +4,23 @@ set -e
 
 NIMBUS_ETH1_BENCHMARKS_REPO="{{ nimbus_eth1_benchmark_git_repo_dir }}"
 
-function log() {
-   echo "$(date '+%Y-%m-%d %H:%M:%S') - $*"
-}
-
 function cleanBenchmarkDir() {
-  log ">>> starting cleanBenchmarkDir() inside benchmarks-cleanup.sh"
+  echo ">>> starting cleanBenchmarkDir() inside benchmarks-cleanup.sh"
 
   if [ ! -d "${NIMBUS_ETH1_BENCHMARKS_REPO}" ]; then
-    log ">>> Benchmark directory ${NIMBUS_ETH1_BENCHMARKS_REPO} does not exist, skipping cleanup"
+    echo ">>> Benchmark directory ${NIMBUS_ETH1_BENCHMARKS_REPO} does not exist, skipping cleanup"
     return 0
   fi
+
+  echo "cd ${NIMBUS_ETH1_BENCHMARKS_REPO}"
+  echo "git clean -df"
+  echo "cd -"
 
   cd "${NIMBUS_ETH1_BENCHMARKS_REPO}"
   git clean -df
   cd -
 
-  log ">>> completed cleanBenchmarkDir()"
+  echo ">>> completed cleanBenchmarkDir()"
 }
 
 cleanBenchmarkDir

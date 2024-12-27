@@ -6,73 +6,79 @@ REPO_URL="{{ nimbus_eth1_repo_url }}"
 BRANCH="{{ nimbus_eth1_repo_branch }}"
 BUILD_DIR="{{ nimbus_eth1_repo_path }}"
 
-function log() {
-   echo "$(date '+%Y-%m-%d %H:%M:%S') - $*"
-}
-
 function cloneOrFetchRepo() {
-  log ">>> starting cloneOrFetchRepo() inside build-and-update-nimbus.sh"
+  echo ">>> starting cloneOrFetchRepo() inside build-and-update-nimbus.sh"
+  echo "mkdir -p ${BUILD_DIR}"
+  echo "chmod 775 ${BUILD_DIR}"
 
   mkdir -p "${BUILD_DIR}"
   chmod 775 "${BUILD_DIR}"
 
   # Check if git repo already exists
   if [ -d "${BUILD_DIR}/.git" ]; then
-      cd "${BUILD_DIR}"
-      log ">>> cleaning repo"
-      log "git clean -fdx > /dev/null 2>&1"
-      log "git submodule foreach --recursive git clean -fdx > /dev/null 2>&1"
-      git clean -fdx > /dev/null 2>&1
-      git submodule foreach --recursive git clean -fdx > /dev/null 2>&1
-      log ">>> Fetching latest changes..."
-      git fetch
-      git reset --hard "origin/${BRANCH}"
+    cd "${BUILD_DIR}"
+
+    echo ">>> cleaning repo"
+    echo "cd ${BUILD_DIR}"
+    echo "git clean -fdx > /dev/null 2>&1"
+    echo "git submodule foreach --recursive git clean -fdx > /dev/null 2>&1"
+
+    git clean -fdx >/dev/null 2>&1
+    git submodule foreach --recursive git clean -fdx >/dev/null 2>&1
+    echo ">>> Fetching latest changes..."
+
+    echo "git fetch"
+    echo "git reset --hard origin/${BRANCH}"
+
+    git fetch
+    git reset --hard "origin/${BRANCH}"
   else
-      log ">>> Cloning repo..."
-      git clone -b "${BRANCH}" "${REPO_URL}" "${BUILD_DIR}"
+    echo ">>> Cloning repo..."
+    echo "git clone -b ${BRANCH} ${REPO_URL} ${BUILD_DIR}"
+    git clone -b "${BRANCH}" "${REPO_URL}" "${BUILD_DIR}"
   fi
 
-  log ">>> completed cloneOrFetchRepo()"
+  echo ">>> completed cloneOrFetchRepo()"
 }
 
 function buildBinaries() {
-  log ">>> starting buildBinaries()"
+  echo ">>> starting buildBinaries()"
+  echo "cd ${BUILD_DIR}"
+
   cd "${BUILD_DIR}"
   COMMIT=$(git rev-parse --short=8 HEAD)
 
   if [[ -f "build/nimbus_execution_client_${COMMIT}" ]]; then
-      log ">>> Binaries already exist for commit ${COMMIT}, no need to build a new nimbus binary!"
-      exit
+    echo ">>> Binaries already exist for commit ${COMMIT}, no need to build a new nimbus binary!"
+    return
   fi
 
-  log ">>> Building binaries..."
+  echo ">>> Building binaries..."
 
-  log ">>> make -j{{ ansible_processor_vcpus }} update"
+  echo "make -j{{ ansible_processor_vcpus }} update"
   make -j{{ ansible_processor_vcpus }} update
 
-  log ">>> make -j{{ ansible_processor_vcpus }} nimbus_execution_client LOG_LEVEL={{ nimbus_eth1_log_level }} NIMFLAGS={{ nimbus_eth1_build_nim_flags | join(" ") }}"
+  echo "make -j{{ ansible_processor_vcpus }} nimbus_execution_client LOG_LEVEL={{ nimbus_eth1_log_level }} NIMFLAGS={{ nimbus_eth1_build_nim_flags | join(" ") }}"
   make -j{{ ansible_processor_vcpus }} nimbus_execution_client \
-      LOG_LEVEL="{{ nimbus_eth1_log_level }}" NIMFLAGS="{{ nimbus_eth1_build_nim_flags | join(" ") }}"
+    LOG_LEVEL="{{ nimbus_eth1_log_level }}" NIMFLAGS="{{ nimbus_eth1_build_nim_flags | join(" ") }}"
 
   # Rename binaries to match commit they were built from.
-  log ">>> renaming binaries to match commit they were built from"
-  log "mv build/nimbus_execution_client build/nimbus_execution_client_${COMMIT}"
+  echo ">>> renaming binaries to match commit they were built from"
+  echo "mv build/nimbus_execution_client build/nimbus_execution_client_${COMMIT}"
   mv "build/nimbus_execution_client" "build/nimbus_execution_client_${COMMIT}"
 
   # Create a symbolic link to the latest version
-  log "creating a symbolic link to the latest version"
-  log "ln -frs build/nimbus_execution_client_${COMMIT} build/nimbus_execution_client"
+  echo ">>> creating a symbolic link to the latest version"
+  echo "ln -frs build/nimbus_execution_client_${COMMIT} build/nimbus_execution_client"
   ln -frs build/nimbus_execution_client_${COMMIT} build/nimbus_execution_client
 
   # Delete copies that are older than N days
-  log "deleting copies that are older than N days"
-  log "find build -mtime +{{ nimbus_eth1_build_days_kept }} -exec rm '{}' \+"
+  echo ">>> deleting copies that are older than N days"
+  echo "find build -mtime +{{ nimbus_eth1_build_days_kept }} -exec rm '{}' \+"
   find build -mtime +{{ nimbus_eth1_build_days_kept }} -exec rm '{}' \+
 
-  log ">>> buildBinaries() complete"
+  echo ">>> buildBinaries() complete"
 }
-
-#-------------------------------------------------------------------------------
 
 cloneOrFetchRepo
 buildBinaries
