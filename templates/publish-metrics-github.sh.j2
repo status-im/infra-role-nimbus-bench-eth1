@@ -14,6 +14,7 @@ BENCHMARK_DESTINATION="${BENCHMARK_GIT_REPO}/${BENCHMARKING_TYPE}-benchmark/${IS
 ENVIRONMENT_LOG_FILE_PATH="${BENCHMARK_DESTINATION}/${ENVIRONMENT_LOG_FILE_NAME}"
 BENCHMARKING_SERVICE_LOG_FILE_NAME="{{ nimbus_eth1_service_log_output_name }}"
 NIMBUS_ETH1_BLOCKS_IMPORT_SCRIPT_PATH="{{ nimbus_eth1_blocks_import_script_path }}"
+BENCHMARK_README_FILE_PATH="${BENCHMARK_DESTINATION}/README.md"
 
 function convert_to_human_readable() {
   local total_ns=$1
@@ -165,9 +166,9 @@ function compareBenchmarkWithPrevious() {
     pip install -r "${NIMBUS_ETH1_GIT_REPO}/scripts/requirements.txt" >/dev/null 2>&1
   fi
 
-  echo "python ${NIMBUS_ETH1_BLOCKS_IMPORT_SCRIPT_PATH} ${CURRENT_BENCHMARK_CSV_PATH} ${PREVIOUS_BENCHMARK_CSV_PATH} 2>&1 || true"
+  echo "python ${NIMBUS_ETH1_BLOCKS_IMPORT_SCRIPT_PATH} ${CURRENT_BENCHMARK_CSV_PATH} ${PREVIOUS_BENCHMARK_CSV_PATH}  >> ${BENCHMARK_README_FILE_PATH} || true"
 
-  python "${NIMBUS_ETH1_BLOCKS_IMPORT_SCRIPT_PATH}" "${CURRENT_BENCHMARK_CSV_PATH}" "${PREVIOUS_BENCHMARK_CSV_PATH}" 2>&1 || true
+  python "${NIMBUS_ETH1_BLOCKS_IMPORT_SCRIPT_PATH}" "${CURRENT_BENCHMARK_CSV_PATH}" "${PREVIOUS_BENCHMARK_CSV_PATH}" >> "${BENCHMARK_README_FILE_PATH}" || true
 
   # Deactivate virtual environment
   echo "deactivate"
