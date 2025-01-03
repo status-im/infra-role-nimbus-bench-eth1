@@ -13,7 +13,6 @@ BENCHMARKING_TYPE="{{ nimbus_eth1_benchmark_type }}"
 BENCHMARK_DESTINATION="${BENCHMARK_GIT_REPO}/${BENCHMARKING_TYPE}-benchmark/${ISO_TIMESTAMP}_${GIT_HASH}"
 ENVIRONMENT_LOG_FILE_PATH="${BENCHMARK_DESTINATION}/${ENVIRONMENT_LOG_FILE_NAME}"
 BENCHMARKING_SERVICE_LOG_FILE_NAME="{{ nimbus_eth1_service_log_output_name }}"
-BENCHMARKING_SERVICE_OUTPUT_LOG_FILE="{{ nimbus_eth1_benchmark_log_output_file_path }}"
 NIMBUS_ETH1_BLOCKS_IMPORT_SCRIPT_PATH="{{ nimbus_eth1_blocks_import_script_path }}"
 
 function convert_to_human_readable() {
