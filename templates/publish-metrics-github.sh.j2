@@ -14,7 +14,9 @@ BENCHMARK_DESTINATION="${BENCHMARK_GIT_REPO}/${BENCHMARKING_TYPE}-benchmark/${IS
 ENVIRONMENT_LOG_FILE_PATH="${BENCHMARK_DESTINATION}/${ENVIRONMENT_LOG_FILE_NAME}"
 BENCHMARKING_SERVICE_LOG_FILE_NAME="{{ nimbus_eth1_service_log_output_name }}"
 NIMBUS_ETH1_BLOCKS_IMPORT_SCRIPT_PATH="{{ nimbus_eth1_blocks_import_script_path }}"
-BENCHMARK_README_FILE_PATH="${BENCHMARK_DESTINATION}/README.md"
+BLOCKS_IMPORT_CSV_FILE_PATH="${BENCHMARK_DESTINATION}/blocks-import.csv"
+README_FILE_PATH="${BENCHMARK_GIT_REPO}/README.md"
+README_TEMPLATE_PATH="${BENCHMARK_GIT_REPO}/README-TEMPLATE.md"
 
 function convert_to_human_readable() {
   local total_ns=$1
@@ -166,9 +168,9 @@ function compareBenchmarkWithPrevious() {
     pip install -r "${NIMBUS_ETH1_GIT_REPO}/scripts/requirements.txt" >/dev/null 2>&1
   fi
 
-  echo "python ${NIMBUS_ETH1_BLOCKS_IMPORT_SCRIPT_PATH} ${CURRENT_BENCHMARK_CSV_PATH} ${PREVIOUS_BENCHMARK_CSV_PATH}  >> ${BENCHMARK_README_FILE_PATH} || true"
+  echo "python ${NIMBUS_ETH1_BLOCKS_IMPORT_SCRIPT_PATH} ${CURRENT_BENCHMARK_CSV_PATH} ${PREVIOUS_BENCHMARK_CSV_PATH} 2>&1 || true"
 
-  python "${NIMBUS_ETH1_BLOCKS_IMPORT_SCRIPT_PATH}" "${CURRENT_BENCHMARK_CSV_PATH}" "${PREVIOUS_BENCHMARK_CSV_PATH}" >> "${BENCHMARK_README_FILE_PATH}" || true
+  python "${NIMBUS_ETH1_BLOCKS_IMPORT_SCRIPT_PATH}" "${CURRENT_BENCHMARK_CSV_PATH}" "${PREVIOUS_BENCHMARK_CSV_PATH}" 2>&1 || true
 
   # Deactivate virtual environment
   echo "deactivate"
@@ -196,14 +198,68 @@ function generateBenchmarkSummary() {
     compareBenchmarkWithPrevious
   } >>"${ENVIRONMENT_LOG_FILE_PATH}" 2>&1
 
+  generateBenchmarkRepoReadme
   moveServiceLogToRepo
+}
+
+function format_timestamp_date() {
+  echo "$1" | awk '{
+      year=substr($0,1,4)
+      month=substr($0,5,2)
+      day=substr($0,7,2)
+      hour=substr($0,10,2)
+      min=substr($0,12,2)
+      sec=substr($0,14,2)
+      print year "-" month "-" day " " hour ":" min ":" sec
+  }'
+}
+
+function generateBenchmarkRepoReadme() {
+
+
+  BENCHMARK_TABLE="| Generated At | Type | Baseline | Contender | Time Difference | Time Difference Percentage |
+  |-------------|------|-----------|------------|-----------------|---------------------------|"
+
+  while read -r file; do
+      raw_timestamp=$(echo "$file" | grep -o '[0-9]\{8\}T[0-9]\{6\}')
+      timestamp=$(format_timestamp_date "$raw_timestamp")
+
+      baseline_git_sha=$(grep "block-import-stats.py" "$file" | grep -o '[^/]*_[^/]*' | cut -d'_' -f2 | head -n 1)
+      contender_git_sha=$(grep "block-import-stats.py" "$file" | grep -o '[^/]*_[^/]*' | cut -d'_' -f2 | tail -n 1)
+      time_diff=$(grep "Time (total):" "$file" | awk -F'[:,]' '{print $2}' | xargs )
+      time_diff_percent=$(grep "Time (total):" "$file" | awk -F'[:,]' '{print $3}' | xargs )
+
+      if [[ "$file" == *"short-benchmark"* ]]; then
+          benchmark_type="short"
+      else
+          benchmark_type="long"
+      fi
+
+      # Remove any quotes if present
+      time_diff=$(echo "$time_diff" | tr -d '"')
+      time_diff_percent=$(echo "$time_diff_percent" | tr -d '"')
+
+      if [ ! -z "$baseline_git_sha" ] && [ ! -z "$contender_git_sha" ] && [ ! -z "$time_diff" ] && [ ! -z "$time_diff_percent" ]; then
+          BENCHMARK_TABLE="${BENCHMARK_TABLE}
+  | $timestamp | $benchmark_type | $baseline_git_sha | $contender_git_sha | $time_diff | $time_diff_percent |"
+      else
+          echo "Warning: Could not extract all required data from $file" >&2
+      fi
+  done < <(find "${BENCHMARK_GIT_REPO}" -name "build-environment.log" | sort -t'/' -k3 -r)
+
+  export BENCHMARK_TABLE
+
+  envsubst < "${README_TEMPLATE_PATH}" > "${README_FILE_PATH}"
+
+  echo "Benchmarking History updated in ${README_FILE_PATH}"
 }
 
 function pushChangesToRepo() {
   cd "${BENCHMARK_DESTINATION}"
-  git pull --rebase
   git add .
+  git add "${README_FILE_PATH}"
   git commit -m "{{ nimbus_eth1_benchmark_publish_commit_message }}"
+  git pull --rebase
   git push
 }
 
