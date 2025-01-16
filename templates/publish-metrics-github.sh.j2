@@ -217,9 +217,11 @@ function format_timestamp_date() {
 function generateBenchmarkRepoReadme() {
 
 
-  BENCHMARK_TABLE="| Generated At | Type | Baseline SHA | Contender SHA | Baseline Time | Contender Time | Time Delta |
-  |--------------|------|--------------|---------------|---------------|----------------|------------|"
+  TABLE_HEADER="| Generated At | Baseline SHA | Contender SHA | Baseline Time | Contender Time | Time Delta |
+  |--------------|--------------|---------------|---------------|----------------|------------|"
 
+  LONG_BENCHMARK_TABLE="$TABLE_HEADER"
+  SHORT_BENCHMARK_TABLE="$TABLE_HEADER"
 
   while read -r file; do
       raw_timestamp=$(echo "$file" | grep -o '[0-9]\{8\}T[0-9]\{6\}')
@@ -247,14 +249,21 @@ function generateBenchmarkRepoReadme() {
       contender_time=$(echo "$contender_time" | tr -d '"')
 
       if [ ! -z "$baseline_git_sha" ] && [ ! -z "$contender_git_sha" ] && [ ! -z "$time_delta" ]; then
-          BENCHMARK_TABLE="${BENCHMARK_TABLE}
-  | $timestamp | $benchmark_type | $baseline_git_sha | $contender_git_sha | $baseline_time | $contender_time | $time_delta |"
+          entry="| $timestamp | $baseline_git_sha | $contender_git_sha | $baseline_time | $contender_time | $time_delta |"
+          if [[ "$benchmark_type" == "short" ]]; then
+              SHORT_BENCHMARK_TABLE="${SHORT_BENCHMARK_TABLE}
+              $entry"
+          else
+              LONG_BENCHMARK_TABLE="${LONG_BENCHMARK_TABLE}
+              $entry"
+          fi
       else
           echo "Warning: Could not extract all required data from $file" >&2
       fi
   done < <(find "${BENCHMARK_GIT_REPO}" -name "build-environment.log" | sort -t'/' -k3 -r)
 
-  export BENCHMARK_TABLE
+  export LONG_BENCHMARK_TABLE
+  export SHORT_BENCHMARK_TABLE
 
   envsubst < "${README_TEMPLATE_PATH}" > "${README_FILE_PATH}"
 
