@@ -218,7 +218,7 @@ function generateBenchmarkRepoReadme() {
 
 
   TABLE_HEADER="| Generated At | Baseline SHA | Contender SHA | Baseline Time | Contender Time | Time Delta |
-  |--------------|--------------|---------------|---------------|----------------|------------|"
+|--------------|--------------|---------------|---------------|----------------|------------|"
 
   LONG_BENCHMARK_TABLE="$TABLE_HEADER"
   SHORT_BENCHMARK_TABLE="$TABLE_HEADER"
@@ -252,10 +252,10 @@ function generateBenchmarkRepoReadme() {
           entry="| $timestamp | $baseline_git_sha | $contender_git_sha | $baseline_time | $contender_time | $time_delta |"
           if [[ "$benchmark_type" == "short" ]]; then
               SHORT_BENCHMARK_TABLE="${SHORT_BENCHMARK_TABLE}
-              $entry"
+$entry"
           else
               LONG_BENCHMARK_TABLE="${LONG_BENCHMARK_TABLE}
-              $entry"
+$entry"
           fi
       else
           echo "Warning: Could not extract all required data from $file" >&2
