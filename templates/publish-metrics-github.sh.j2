@@ -272,6 +272,7 @@ $entry"
 
 function pushChangesToRepo() {
   cd "${BENCHMARK_DESTINATION}"
+  git fetch
   git add .
   git add "${README_FILE_PATH}"
   git commit -m "{{ nimbus_eth1_benchmark_publish_commit_message }}"
