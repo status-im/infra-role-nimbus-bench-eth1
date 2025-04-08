@@ -271,6 +271,7 @@ $entry"
 }
 
 function pushChangesToRepo() {
+  set -x
   cd "${BENCHMARK_DESTINATION}"
   git fetch
   git add .
