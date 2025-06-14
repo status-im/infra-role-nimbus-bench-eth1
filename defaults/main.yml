@@ -10,6 +10,7 @@ nimbus_eth1_service_user_ssh_dir: '/home/{{ nimbus_eth1_service_user }}/.ssh'
 nimbus_eth1_service_user_ssh_config: '{{ nimbus_eth1_service_user_ssh_dir }}/config'
 nimbus_eth1_service_group: 'staff'
 nimbus_eth1_template_db: '/data/template-db'
+nimbus_eth1_failed_benchmarks_dir: '/home/data/failed-benchmark-uploads'
 
 nimbus_eth1_service_scripts_base: '/data/scripts'
 nimbus_eth1_build_script: 'build-and-update-nimbus.sh'
@@ -19,6 +20,7 @@ nimbus_eth1_db_clean_script: 'database-cleanup.sh'
 nimbus_eth1_import_checkpoint_script: 'import-checkpoint.sh'
 nimbus_eth1_benchmarks_cleanup_script: 'benchmarks-cleanup.sh'
 nimbus_eth1_benchmark_gen_script: 'fetch-benchmarks.sh'
+nimbus_eth1_benchmark_retry_script: 'retry-benchmark-upload.sh'
 nimbus_eth1_benchmark_git_repo_dir: '/home/data/nimbus-eth1-benchmarks'
 nimbus_eth1_benchmarks_git_repo_url: 'git@github.com:status-im/nimbus-eth1-benchmarks.git'
 nimbus_eth1_benchmark_dir: '{{ nimbus_eth1_benchmark_git_repo_dir }}/{{ nimbus_eth1_benchmark_type }}-benchmark'
@@ -41,6 +43,8 @@ nimbus_eth1_network: 'mainnet'
 #nimbus_eth1_max_blocks_to_import: 5000
 #nimbus_eth1_benchmark_publish_commit_message: 'debug: publish {{ nimbus_eth1_benchmark_type }}-benchmark metrics and report for 5000 blocks'
 nimbus_eth1_debug: 'false'
+nimbus_eth1_max_push_retries: 3
+nimbus_eth1_push_retry_delay: 30
 
 nimbus_eth1_max_blocks_to_import: 1000000
 nimbus_eth1_benchmark_publish_commit_message: '{{ nimbus_eth1_benchmark_type }}-benchmark: publish metrics and report'
@@ -56,3 +60,5 @@ nimbus_eth1_repo_url: 'https://github.com/status-im/nimbus-eth1'
 nimbus_eth1_repo_path: '{{ nimbus_eth1_service_path }}/repo'
 nimbus_eth1_benchmarks_ssh_key_file: '{{ nimbus_eth1_service_user_ssh_dir }}/id_rsa'
 nimbus_eth1_benchmarks_repo_ssh_key: '{{lookup("vault", "nimbus/eth1/benchmark", field="github_webhook_ssh_key", override=True)}}'
+nimbus_eth1_git_user_name: "Autobot"
+nimbus_eth1_git_user_email: "autobot@status.im"

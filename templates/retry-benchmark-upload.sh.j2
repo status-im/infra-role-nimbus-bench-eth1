@@ -1,0 +1,103 @@
+#!/bin/bash
+
+set -e
+
+BENCHMARK_REPO_URL="git@github.com:status-im/nimbus-eth1-benchmarks.git"
+FAILED_BENCHMARKS_DIR="/home/data/failed-benchmark-uploads"
+
+function show_usage() {
+    echo "Usage: $0 <benchmark_directory_name>"
+    echo ""
+    echo "Available failed benchmarks:"
+    if [ -d "${FAILED_BENCHMARKS_DIR}" ]; then
+        ls -1 "${FAILED_BENCHMARKS_DIR}" 2>/dev/null || echo "  No failed benchmarks found"
+    else
+        echo "  No failed benchmarks directory found"
+    fi
+    echo ""
+    echo "Example: $0 20250412T000720_9c9f9d416"
+}
+
+function retry_upload() {
+    local benchmark_name="$1"
+    local failed_dir="${FAILED_BENCHMARKS_DIR}/${benchmark_name}"
+    local work_dir="/tmp/nimbus-benchmark-retry-$(date +%s)"
+
+    if [ ! -d "${failed_dir}" ]; then
+        echo "ERROR: Failed benchmark directory not found: ${failed_dir}"
+        exit 1
+    fi
+
+    echo ">>> Retrying benchmark upload for ${benchmark_name}"
+    echo ">>> Failed benchmark directory: ${failed_dir}"
+
+    local benchmark_type="long"
+    local benchmark_dest_dir="${benchmark_type}-benchmark/${benchmark_name}"
+
+    echo ">>> Creating work directory: ${work_dir}"
+    mkdir -p "${work_dir}"
+    cd "${work_dir}"
+
+    echo ">>> Cloning benchmark repository"
+    if ! git clone "${BENCHMARK_REPO_URL}" nimbus-eth1-benchmarks; then
+        echo "ERROR: Failed to clone repository"
+        rm -rf "${work_dir}"
+        exit 1
+    fi
+
+    cd nimbus-eth1-benchmarks
+
+    git config user.name "Autobot" || true
+    git config user.email "autobot@status.im" || true
+
+    echo ">>> Creating benchmark directory: ${benchmark_dest_dir}"
+    mkdir -p "${benchmark_dest_dir}"
+
+    echo ">>> Copying benchmark data"
+    find "${failed_dir}" -type f ! -name "retry-benchmark-upload.sh" ! -name "README.md.updated" -exec cp {} "${benchmark_dest_dir}/" \;
+
+    if [ -f "${failed_dir}/README.md.updated" ]; then
+        echo ">>> Copying updated README"
+        cp "${failed_dir}/README.md.updated" README.md
+    fi
+
+    echo ">>> Files to be committed:"
+    git status --porcelain
+
+    echo ">>> Adding changes to git"
+    git add .
+
+    echo ">>> Creating commit"
+    git commit -m "long-benchmark: publish metrics and report for ${benchmark_name} (manual retry)"
+
+    echo ">>> Pushing to GitHub"
+    if git push origin master; then
+        echo ">>> Successfully uploaded benchmark data!"
+
+        echo ">>> Cleaning up work directory"
+        cd /
+        rm -rf "${work_dir}"
+
+        echo ">>> Removing failed benchmark directory"
+        rm -rf "${failed_dir}"
+
+        echo ">>> Retry completed successfully!"
+    else
+        echo "ERROR: Failed to push to GitHub"
+        echo ">>> Work directory preserved at: ${work_dir}"
+        echo ">>> You can manually investigate and push from there"
+        exit 1
+    fi
+}
+
+if [ $# -eq 0 ]; then
+    show_usage
+    exit 1
+fi
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    show_usage
+    exit 0
+fi
+
+retry_upload "$1"
