@@ -6,6 +6,10 @@ REPO_URL="{{ nimbus_eth1_repo_url }}"
 BRANCH="{{ nimbus_eth1_repo_branch }}"
 BUILD_DIR="{{ nimbus_eth1_repo_path }}"
 
+COMMIT_RANGE_START="{{ nimbus_eth1_commit_range_start }}"
+COMMIT_RANGE_END="{{ nimbus_eth1_commit_range_end }}"
+COMMIT_RANGE_STATE_FILE="{{ nimbus_eth1_service_scripts_base }}/.commit_range_state"
+
 function cloneOrFetchRepo() {
   echo ">>> starting cloneOrFetchRepo() inside build-and-update-nimbus.sh"
   echo "mkdir -p ${BUILD_DIR}"
@@ -28,17 +32,72 @@ function cloneOrFetchRepo() {
     echo ">>> Fetching latest changes..."
 
     echo "git fetch"
-    echo "git reset --hard origin/${BRANCH}"
-
     git fetch
-    git reset --hard "origin/${BRANCH}"
   else
     echo ">>> Cloning repo..."
     echo "git clone -b ${BRANCH} ${REPO_URL} ${BUILD_DIR}"
     git clone -b "${BRANCH}" "${REPO_URL}" "${BUILD_DIR}"
+    cd "${BUILD_DIR}"
+  fi
+
+  if [[ -n "${COMMIT_RANGE_START}" && -n "${COMMIT_RANGE_END}" ]]; then
+    echo ">>> Processing commit range from ${COMMIT_RANGE_START} to ${COMMIT_RANGE_END}"
+
+    local next_commit
+    next_commit=$(getNextCommitFromRange)
+
+    if [[ -n "${next_commit}" ]]; then
+      echo ">>> Checking out commit: ${next_commit}"
+      echo "git checkout ${next_commit}"
+      git checkout "${next_commit}"
+
+      echo ">>> Updating submodules for commit ${next_commit}"
+      echo "git submodule update --init --recursive"
+      git submodule update --init --recursive
+    else
+      echo ">>> All commits in range have been processed!"
+      echo ">>> Switching back to branch mode"
+      echo "git reset --hard origin/${BRANCH}"
+      git reset --hard "origin/${BRANCH}"
+
+      # Clean up state file
+      rm -f "${COMMIT_RANGE_STATE_FILE}"
+    fi
+  else
+    echo ">>> Using branch mode"
+    echo "git reset --hard origin/${BRANCH}"
+    git reset --hard "origin/${BRANCH}"
   fi
 
   echo ">>> completed cloneOrFetchRepo()"
+}
+
+function getNextCommitFromRange() {
+  local commits_in_range
+  local processed_commits
+  local next_commit=""
+
+  commits_in_range=$(git log --reverse --pretty=format:"%H" "${COMMIT_RANGE_START}..${COMMIT_RANGE_END}")
+
+  if [[ -f "${COMMIT_RANGE_STATE_FILE}" ]]; then
+    processed_commits=$(cat "${COMMIT_RANGE_STATE_FILE}")
+  else
+    processed_commits=""
+  fi
+
+  # Find the next unprocessed commit
+  for commit in ${commits_in_range}; do
+    if ! echo "${processed_commits}" | grep -q "${commit}"; then
+      next_commit="${commit}"
+      break
+    fi
+  done
+
+  if [[ -n "${next_commit}" ]]; then
+    echo "${next_commit}" >> "${COMMIT_RANGE_STATE_FILE}"
+  fi
+
+  echo "${next_commit}"
 }
 
 function buildBinaries() {
@@ -53,7 +112,7 @@ function buildBinaries() {
     return
   fi
 
-  echo ">>> Building binaries..."
+  echo ">>> Building binaries for commit ${COMMIT}..."
 
   echo "make -j{{ ansible_processor_vcpus }} update"
   make -j{{ ansible_processor_vcpus }} update
