@@ -14,26 +14,17 @@
 
 - name: Create Service Scripts
   template:
-    src: "{{ item }}.j2"
+    src: "{{ item }}"
     dest: "{{ nimbus_eth1_service_scripts_base }}/{{ item }}"
     owner: '{{ nimbus_eth1_service_user }}'
     group: '{{ nimbus_eth1_service_group }}'
     mode: 0775
   loop:
-    - '{{ nimbus_eth1_build_script }}'
-    - '{{ nimbus_eth1_publish_script }}'
-    - '{{ nimbus_eth1_db_gen_script }}'
-    - '{{ nimbus_eth1_import_checkpoint_script }}'
-    - '{{ nimbus_eth1_benchmarks_cleanup_script }}'
-    - '{{ nimbus_eth1_benchmark_gen_script }}'
-
-- name: Create log file
-  file:
-    path: "{{ nimbus_eth1_benchmark_log_output_file_path }}"
-    state: touch
-    owner: '{{ nimbus_eth1_service_user }}'
-    group: '{{ nimbus_eth1_service_group }}'
-    mode: '0644'
+    - 'run-benchmark.sh'
+    - 'results-processing.sh'
+    - 'repo-management.sh'
+    - 'build-and-compile.sh'
+    - 'benchmark-execution.sh'
 
 - name: Reload systemctl
   command: systemctl daemon-reload

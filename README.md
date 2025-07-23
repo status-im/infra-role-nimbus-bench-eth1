@@ -22,3 +22,12 @@ nimbus_eth1_era_dir: 'path/to/era-files'
 # era files are necessary for import process to run
 nimbus_eth1_era1_dir: 'path/to/era1-files'
 ```
+
+The entrypoint script that runs the benchmark is located at templates/run-benchmark.sh
+The required arguments would be :
+```bash
+
+BENCHMARKING_TYPE= "short | long"
+FORCE_RUN= "true | false"
+
+```
