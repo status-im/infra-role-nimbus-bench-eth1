@@ -271,6 +271,7 @@ $entry"
 }
 
 function pushChangesToRepo() {
+  export GIT_TRACE=1
   set -x
   cd "${BENCHMARK_DESTINATION}"
   git fetch
