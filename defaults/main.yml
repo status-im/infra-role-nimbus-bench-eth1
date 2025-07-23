@@ -41,8 +41,6 @@ nimbus_eth1_network: 'mainnet'
 #nimbus_eth1_max_blocks_to_import: 5000
 #nimbus_eth1_benchmark_publish_commit_message: 'debug: publish {{ nimbus_eth1_benchmark_type }}-benchmark metrics and report for 5000 blocks'
 nimbus_eth1_debug: 'false'
-nimbus_eth1_commit_range_start: '3c572c49b'
-nimbus_eth1_commit_range_end: '6ec7ab001'
 
 nimbus_eth1_max_blocks_to_import: 1000000
 nimbus_eth1_benchmark_publish_commit_message: '{{ nimbus_eth1_benchmark_type }}-benchmark: publish metrics and report'
