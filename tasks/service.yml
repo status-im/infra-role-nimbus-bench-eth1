@@ -12,19 +12,23 @@
     dest: '/etc/systemd/system/{{ nimbus_eth1_service_name }}.service'
     mode: 0644
 
+- name: Create benchmark environment file
+  template:
+    src: 'benchmark.env.j2'
+    dest: '{{ nimbus_eth1_service_scripts_base }}/benchmark.env'
+    owner: '{{ nimbus_eth1_service_user }}'
+    group: '{{ nimbus_eth1_service_group }}'
+    mode: 0644
+
 - name: Create Service Scripts
   template:
-    src: "{{ item }}"
-    dest: "{{ nimbus_eth1_service_scripts_base }}/{{ item }}"
+    src: "{{ item | basename }}"
+    dest: "{{ nimbus_eth1_service_scripts_base }}/{{ item | basename }}"
     owner: '{{ nimbus_eth1_service_user }}'
     group: '{{ nimbus_eth1_service_group }}'
     mode: 0775
-  loop:
-    - 'run-benchmark.sh'
-    - 'results-processing.sh'
-    - 'repo-management.sh'
-    - 'build-and-compile.sh'
-    - 'benchmark-execution.sh'
+  with_fileglob:
+    - "../templates/*.sh"
 
 - name: Reload systemctl
   command: systemctl daemon-reload

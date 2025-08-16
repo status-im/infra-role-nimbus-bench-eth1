@@ -20,5 +20,18 @@ nimbus_eth1_network: 'mainnet'
 
 # Repo
 nimbus_eth1_repo_branch: 'master'
+nimbus_eth1_repo_url: 'https://github.com/status-im/nimbus-eth1'
+nimbus_eth1_benchmarks_repo_url: 'git@github.com:status-im/nimbus-eth1-benchmarks.git'
 nimbus_eth1_benchmarks_ssh_key_file: '{{ nimbus_eth1_service_user_ssh_dir }}/id_rsa'
 nimbus_eth1_benchmarks_repo_ssh_key: '{{lookup("vault", "nimbus/eth1/benchmark", field="github_webhook_ssh_key", override=True)}}'
+
+# Benchmark paths
+nimbus_eth1_benchmarks_repo: '/data/status-im/nimbus-eth1-benchmarks'
+nimbus_eth1_repo: '/data/status-im/nimbus-eth1'
+nimbus_eth1_template_db: '/data/template-db'
+nimbus_eth1_host_benchmarks_dir: '/data/host-benchmarks'
+nimbus_eth1_era1_dir: '/data/era1'
+nimbus_eth1_era_dir: '/data/era'
+
+# Benchmark configuration
+nimbus_eth1_max_blocks_to_import: 1000000

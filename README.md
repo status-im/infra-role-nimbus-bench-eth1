@@ -27,7 +27,7 @@ The entrypoint script that runs the benchmark is located at templates/run-benchm
 The required arguments would be :
 ```bash
 
-BENCHMARKING_TYPE= "short | long"
-FORCE_RUN= "true | false"
+BENCHMARKING_TYPE="short | long"
+FORCE_RUN="true | false"
 
 ```
