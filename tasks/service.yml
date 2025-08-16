@@ -21,14 +21,14 @@
     mode: 0644
 
 - name: Create Service Scripts
-  template:
+  copy:
     src: "{{ item | basename }}"
     dest: "{{ nimbus_eth1_service_scripts_base }}/{{ item | basename }}"
     owner: '{{ nimbus_eth1_service_user }}'
     group: '{{ nimbus_eth1_service_group }}'
     mode: 0775
   with_fileglob:
-    - "../templates/*.sh"
+    - "../files/*.sh"
 
 - name: Reload systemctl
   command: systemctl daemon-reload
