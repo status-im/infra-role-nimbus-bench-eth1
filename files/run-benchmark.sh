@@ -44,8 +44,6 @@ callAndLogFunc 'moveBenchmarkingFileToRepo'
 callAndLogFunc 'generateBuildEnvironmentLogFile'
 # generates systemd service logs
 callAndLogFunc 'generateSystemdServiceLogs'
-# updates nimbus-eth1-benchmarks root level Readme
-callAndLogFunc 'generateBenchmarkRepoReadme'
 # copy files from current benchmark run to nimbus-eth1-benchmarks directory and make latest symlink
 callAndLogFunc 'moveFilesFromInvocationDirectoryToBenchmarkingRepo'
 # git add, commit and push the changes to nimbus-eth1-benchmarks github repo

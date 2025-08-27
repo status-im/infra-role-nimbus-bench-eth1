@@ -153,18 +153,6 @@ function generateBuildEnvironmentLogFile() {
   } >>"${CURRENT_BENCHMARK_RUN_DIR}/build-environment.log" 2>&1
 }
 
-function format_timestamp_date() {
-  echo "$1" | awk '{
-      year=substr($0,1,4)
-      month=substr($0,5,2)
-      day=substr($0,7,2)
-      hour=substr($0,10,2)
-      min=substr($0,12,2)
-      sec=substr($0,14,2)
-      print year "-" month "-" day " " hour ":" min ":" sec
-  }'
-}
-
 function moveBenchmarkingFileToRepo() {
   if [[ ! -f "${DEBUG_CSV_PATH}" ]]; then
     echo "${DEBUG_CSV_PATH} does not exist, skipping github publish stage"
@@ -177,71 +165,26 @@ function moveBenchmarkingFileToRepo() {
   cp "${DEBUG_CSV_PATH}" "${BENCHMARK_DESTINATION}/${BENCHMARK_FILE_NAME}"
 }
 
-function generateBenchmarkRepoReadme() {
-
-  TABLE_HEADER="| Generated At | Baseline SHA | Contender SHA | Baseline Time | Contender Time | Time Delta |
-|--------------|--------------|---------------|---------------|----------------|------------|"
-
-  local LONG_BENCHMARK_TABLE="$TABLE_HEADER"
-  local SHORT_BENCHMARK_TABLE="$TABLE_HEADER"
-
-  while read -r file; do
-      local raw_timestamp=$(echo "$file" | grep -o '[0-9]\{8\}T[0-9]\{6\}')
-      local timestamp=$(format_timestamp_date "$raw_timestamp")
-
-      local baseline_git_sha=$(grep "block-import-stats.py" "$file" | grep -o '[^/]*_[^/]*' | cut -d'_' -f2 | head -n 1)
-      local contender_git_sha=$(grep "block-import-stats.py" "$file" | grep -o '[^/]*_[^/]*' | cut -d'_' -f2 | tail -n 1)
-
-      # Extract baseline and contender times
-      local baseline_time=$(grep -o "baseline: [0-9hms]*" "$file" | cut -d' ' -f2)
-      local contender_time=$(grep -o "contender: [0-9hms]*" "$file" | cut -d' ' -f2)
-
-      # Extract combined time delta and percentage
-      local time_delta=$(grep "Time (total):" "$file" | sed 's/Time (total): \(.*\)/\1/')
-
-      if [[ "$file" == *"short-benchmark"* ]]; then
-          local benchmark_type="short"
-      else
-          local benchmark_type="long"
-      fi
-
-      # Remove any quotes if present
-      local time_delta=$(echo "$time_delta" | tr -d '"')
-      local baseline_time=$(echo "$baseline_time" | tr -d '"')
-      local contender_time=$(echo "$contender_time" | tr -d '"')
-
-      if [ ! -z "$baseline_git_sha" ] && [ ! -z "$contender_git_sha" ] && [ ! -z "$time_delta" ]; then
-          local entry="| $timestamp | $baseline_git_sha | $contender_git_sha | $baseline_time | $contender_time | $time_delta |"
-          if [[ "$benchmark_type" == "short" ]]; then
-              SHORT_BENCHMARK_TABLE="${SHORT_BENCHMARK_TABLE}
-$entry"
-          else
-              LONG_BENCHMARK_TABLE="${LONG_BENCHMARK_TABLE}
-$entry"
-          fi
-      else
-          echo "Warning: Could not extract all required data from $file" >&2
-      fi
-  done < <(find "${NIMBUS_ETH1_BENCHMARKS_REPO}" -name "build-environment.log" | sort -t'/' -k3 -r)
-
-  export LONG_BENCHMARK_TABLE
-  export SHORT_BENCHMARK_TABLE
-
-  envsubst < "${README_TEMPLATE_PATH}" > "${README_FILE_PATH}"
-
-  echo "Benchmarking History updated in ${README_FILE_PATH}"
-}
-
 function publishBenchmarkingResults() {
   cd "${NIMBUS_ETH1_BENCHMARKS_REPO}"
   # to debug git push failures
   export GIT_TRACE=1
   git fetch
   git add .
-  git add "${README_FILE_PATH}"
   git commit -m "${BENCHMARKING_TYPE}-benchmark: publish metrics and report"
   git pull --rebase
   git push
+
+  echo ">>> Running regenerate_readme.sh to update repository README"
+  "${NIMBUS_ETH1_BENCHMARKS_REPO}/regenerate_readme.sh"
+
+  if git diff --quiet && git diff --cached --quiet; then
+    echo "No changes detected after running regenerate_readme.sh, skipping README commit"
+  else
+    git add .
+    git commit -m "chore: update ${BENCHMARKING_TYPE} benchmark Readme"
+    git push
+  fi
 }
 
 function moveFilesFromInvocationDirectoryToBenchmarkingRepo(){
