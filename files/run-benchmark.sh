@@ -10,13 +10,29 @@ source /data/scripts/repo-management.sh      # Git operations
 source /data/scripts/build-and-compile.sh    # Building binaries
 source /data/scripts/benchmark-execution.sh  # Running benchmarks
 source /data/scripts/results-processing.sh   # Processing and publishing results
+source /data/scripts/metrics-collector.sh    # Metrics collection
 
 function callAndLogFunc {
-    echo ">>> starting ${1}"
-    ${1}
-    echo "<<< ending ${1}"
+    local func_name="$1"
+
+    echo ">>> starting ${func_name}"
+    recordStageStart "${func_name}"
+
+    local exit_code=0
+    ${func_name} || exit_code=$?
+
+    if [[ ${exit_code} -eq 0 ]]; then
+        recordStageEnd "${func_name}" 1
+        echo "<<< ending ${func_name} (success)"
+    else
+        recordStageEnd "${func_name}" 0
+        echo "<<< ending ${func_name} (failed with code ${exit_code})"
+        return ${exit_code}
+    fi
 }
 
+# Record benchmark start timestamp
+recordBenchmarkTimestamp
 # clones or updates the nimbus-eth1-benchmarks github repo
 callAndLogFunc 'cloneOrFetchBenchmarksRepo'
 # clones or updates the nimbus-eth1 github repo
