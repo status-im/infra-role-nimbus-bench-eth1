@@ -1,0 +1,11 @@
+---
+# Handlers for metrics exporter
+
+- name: reload systemd
+  systemd:
+    daemon_reload: yes
+
+- name: restart nimbus-benchmark-metrics
+  systemd:
+    name: nimbus-benchmark-metrics
+    state: restarted
