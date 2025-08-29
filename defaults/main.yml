@@ -8,6 +8,12 @@ nimbus_eth1_service_user_ssh_config: '{{ nimbus_eth1_service_user_ssh_dir }}/con
 nimbus_eth1_service_user: 'nimbus'
 nimbus_eth1_service_group: 'staff'
 
+# Metrics Configuration
+metrics_listen_host: '0.0.0.0'
+metrics_listen_port: 9091
+metrics_refresh_interval: 10
+metrics_dir: '/var/lib/nimbus-benchmark-metrics'
+
 nimbus_eth1_service_scripts_base: '/data/scripts'
 # Paths
 nimbus_eth1_logs_link: '{{ nimbus_eth1_service_path }}/logs'
