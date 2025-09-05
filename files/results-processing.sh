@@ -172,7 +172,7 @@ function publishBenchmarkingResults() {
   git fetch
   git add .
   git commit -m "${BENCHMARKING_TYPE}-benchmark: publish metrics and report"
-  git pull --rebase
+  git pull --rebase -X ours
   git push
 
   echo ">>> Running regenerate_readme.sh to update repository README"
