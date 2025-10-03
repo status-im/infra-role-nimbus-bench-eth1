@@ -1,0 +1,35 @@
+[Unit]
+Description=Nimbus ETH1 Benchmark Metrics Exporter
+After=network.target
+Documentation=https://github.com/status-im/infra-role-nimbus-bench-eth1
+
+[Service]
+Type=simple
+User={{ nimbus_eth1_service_user | default('nimbus') }}
+Group={{ nimbus_eth1_service_group | default('staff') }}
+WorkingDirectory=/opt/nimbus-benchmark
+ExecStart=/usr/bin/python3 /opt/nimbus-benchmark/metrics-exporter.py
+Restart=always
+RestartSec=10
+
+# Environment variables
+Environment="METRICS_FILE=/var/lib/nimbus-benchmark-metrics/benchmark_metrics.prom"
+Environment="METRICS_HOST={{ metrics_listen_host | default('0.0.0.0') }}"
+Environment="METRICS_PORT={{ metrics_listen_port | default('9091') }}"
+Environment="REFRESH_INTERVAL={{ metrics_refresh_interval | default('10') }}"
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/nimbus-benchmark-metrics
+ReadOnlyPaths=/sys/fs/cgroup
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nimbus-benchmark-metrics
+
+[Install]
+WantedBy=multi-user.target
