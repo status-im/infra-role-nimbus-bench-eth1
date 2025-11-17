@@ -16,7 +16,7 @@ function buildBinaries() {
 
   make -j16 update
   make -j16 nimbus_execution_client \
-    LOG_LEVEL="DEBUG" NIMFLAGS="-d:chronicles_colors=none -d:disableMarchNative"
+    LOG_LEVEL="DEBUG" NIMFLAGS="-d:chronicles_colors=none -d:disableMarchNative" ROCKSDB_CI_CACHE="${NIMBUS_ETH1_REPO}/build"
 
   echo ">>> renaming binaries to match commit they were built from"
   mv "build/nimbus_execution_client" "build/nimbus_execution_client_${COMMIT}"
@@ -40,4 +40,3 @@ function copyTemplateDatabase() {
   echo ">>> making nimbus the owner of the copied files"
   chown -R "$(id -u -n):$(id -g -n)" "${NIMBUS_ETH1_DB_DIR}"
 }
-
