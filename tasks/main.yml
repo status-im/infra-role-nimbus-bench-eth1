@@ -4,3 +4,8 @@
 - include_tasks: user.yml
 - include_tasks: config.yml
 - include_tasks: service.yml
+- include_tasks: metrics.yml
+  tags: [metrics, monitoring]
+- include_tasks: consul.yml
+  when: env is defined or consul_config_name is defined
+  tags: [consul, service-discovery]

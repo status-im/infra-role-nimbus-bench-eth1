@@ -1,0 +1,50 @@
+---
+- name: Create metrics directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ nimbus_eth1_service_user }}"
+    group: "{{ nimbus_eth1_service_group }}"
+    mode: '0755'
+  with_items:
+    - /var/lib/nimbus-benchmark-metrics
+    - /opt/nimbus-benchmark
+
+- name: Copy metrics collector script
+  copy:
+    src: metrics-collector.sh
+    dest: /data/scripts/metrics-collector.sh
+    owner: "{{ nimbus_eth1_service_user }}"
+    group: "{{ nimbus_eth1_service_group }}"
+    mode: '0755'
+
+- name: Install prometheus_client Python package
+  pip:
+    name: prometheus_client
+    state: present
+
+- name: Copy metrics exporter script
+  copy:
+    src: metrics-exporter.py
+    dest: /opt/nimbus-benchmark/metrics-exporter.py
+    owner: "{{ nimbus_eth1_service_user }}"
+    group: "{{ nimbus_eth1_service_group }}"
+    mode: '0755'
+
+- name: Deploy metrics exporter systemd service
+  template:
+    src: nimbus-benchmark-metrics.service.j2
+    dest: /etc/systemd/system/nimbus-benchmark-metrics.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - reload systemd
+    - restart nimbus-benchmark-metrics
+
+- name: Start and enable metrics exporter service
+  systemd:
+    name: nimbus-benchmark-metrics
+    enabled: yes
+    state: started
+    daemon_reload: yes

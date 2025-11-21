@@ -1,0 +1,27 @@
+---
+# Register Nimbus ETH1 Benchmark metrics exporter with Consul
+
+- name: Create Consul service definition for metrics exporter
+  include_role: name=infra-role-consul-service
+  vars:
+    consul_config_name: 'nimbus-eth1-benchmark-metrics'
+    consul_services:
+      - name: 'nimbus-eth1-benchmark-metrics'
+        tags: 
+          - '{{ env | default("unknown") }}.{{ stage | default("unknown") }}'
+          - 'nimbus-eth1'
+          - 'benchmarks'
+          - 'metrics'
+          - 'prometheus'
+        port: '{{ metrics_listen_port }}'
+        address: '{{ ansible_local.wireguard.address }}'
+        meta:
+          component: 'nimbus-eth1-benchmarks'
+        checks:
+          - id: 'nimbus-eth1-benchmark-metrics-health'
+            name: 'Nimbus ETH1 Benchmark Metrics Exporter Health'
+            type: http
+            http: 'http://localhost:{{ metrics_listen_port }}/health'
+            interval: '30s'
+            timeout: '5s'
+  when: consul_config_name is defined or env is defined
