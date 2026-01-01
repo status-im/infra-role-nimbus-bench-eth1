@@ -17,10 +17,16 @@
         meta:
           component: 'nimbus-eth1-benchmarks'
         checks:
-          - id: 'nimbus-eth1-benchmark-metrics-health'
-            name: 'Nimbus ETH1 Benchmark Metrics Exporter Health'
+          - id: 'nimbus-eth1-benchmark-metrics-http'
+            name: 'Metrics Exporter HTTP'
             type: http
-            http: 'http://localhost:{{ metrics_listen_port }}/health'
-            interval: '30s'
+            http: 'http://localhost:{{ metrics_listen_port }}/metrics'
+            interval: '60s'
             timeout: '5s'
+          - id: 'nimbus-eth1-benchmark-health'
+            name: 'Benchmark Health Check'
+            type: script
+            script: '/opt/nimbus-benchmark/health-check.sh {{ nimbus_eth1_benchmark_type }}'
+            interval: '5m'
+            timeout: '10s'
   when: consul_config_name is defined or env is defined

@@ -18,15 +18,25 @@
     group: "{{ nimbus_eth1_service_group }}"
     mode: '0755'
 
-- name: Install prometheus_client Python package
+- name: Install Python packages for metrics exporter
   pip:
-    name: prometheus_client
+    name:
+      - prometheus_client
+      - pyyaml
     state: present
 
 - name: Copy metrics exporter script
   copy:
     src: metrics-exporter.py
     dest: /opt/nimbus-benchmark/metrics-exporter.py
+    owner: "{{ nimbus_eth1_service_user }}"
+    group: "{{ nimbus_eth1_service_group }}"
+    mode: '0755'
+
+- name: Copy benchmark health check script
+  copy:
+    src: benchmark-health-check.sh
+    dest: /opt/nimbus-benchmark/health-check.sh
     owner: "{{ nimbus_eth1_service_user }}"
     group: "{{ nimbus_eth1_service_group }}"
     mode: '0755'
