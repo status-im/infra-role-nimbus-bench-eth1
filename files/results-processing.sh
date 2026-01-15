@@ -2,6 +2,55 @@
 # vim: ft=sh
 set -e
 
+# Find the previous benchmarked commit using git history
+# This ensures correct comparison even when benchmarks are run out of order
+# Args:
+#   $1 - current commit hash (short or full)
+#   $2 - benchmark type directory path
+# Returns: the benchmark directory name (YYYYMMDDTHHMMSS_hash) of the previous benchmark
+function findPreviousBenchmarkByGitHistory() {
+  local CURRENT_COMMIT="$1"
+  local BENCHMARK_TYPE_DIR="$2"
+
+  if [ ! -d "${BENCHMARK_TYPE_DIR}" ]; then
+    return
+  fi
+
+  # Get list of all benchmarked commit hashes (8 char)
+  local BENCHMARKED_COMMITS=$(find "${BENCHMARK_TYPE_DIR}" -mindepth 1 -maxdepth 1 -type d -name '*_*' \
+    ! -name 'latest' -exec basename {} \; | sed 's/.*_//' | sort -u)
+
+  if [ -z "${BENCHMARKED_COMMITS}" ]; then
+    return
+  fi
+
+  cd "${NIMBUS_ETH1_REPO}"
+
+  # Get full hash for current commit
+  local CURRENT_FULL=$(git rev-parse "${CURRENT_COMMIT}" 2>/dev/null || echo "${CURRENT_COMMIT}")
+
+  # Get ancestors of current commit (excluding itself), newest first
+  local ANCESTORS=$(git rev-list "${CURRENT_FULL}^" 2>/dev/null || true)
+
+  if [ -z "${ANCESTORS}" ]; then
+    return
+  fi
+
+  # Find the first ancestor that has a benchmark
+  for ancestor in ${ANCESTORS}; do
+    local short_ancestor=$(echo "${ancestor}" | cut -c1-8)
+    if echo "${BENCHMARKED_COMMITS}" | grep -q "^${short_ancestor}"; then
+      # Found it - now get the full directory name
+      local DIR_NAME=$(find "${BENCHMARK_TYPE_DIR}" -mindepth 1 -maxdepth 1 -type d -name "*_${short_ancestor}*" \
+        ! -name 'latest' -exec basename {} \; 2>/dev/null | head -n 1)
+      if [ -n "${DIR_NAME}" ]; then
+        echo "${DIR_NAME}"
+        return
+      fi
+    fi
+  done
+}
+
 function convertToHumanReadableTime() {
   local total_ns=$1
 
@@ -96,27 +145,47 @@ function fetchHostInformation() {
 }
 
 function compareBenchmarkWithPrevious() {
-  echo "=== Comparison of last two benchmarks ==="
+  echo "=== Comparison with previous benchmark (by git history) ==="
 
   local NIMBUS_ETH1_BLOCKS_IMPORT_SCRIPT_PATH="${NIMBUS_ETH1_REPO}/scripts/block-import-stats.py"
   local VENV_PATH="${NIMBUS_ETH1_REPO}/stats"
-
 
   if [ ! -d "${CURRENT_BENCHMARK_TYPE_DIR}" ]; then
     echo "${CURRENT_BENCHMARK_TYPE_DIR} does not exist, skipping compareBenchmarkWithPrevious()"
     return
   fi
 
-  if [[ ! "$(find "${CURRENT_BENCHMARK_TYPE_DIR}" -mindepth 1 -maxdepth 1 -type d | wc -l)" -gt 2 ]]; then
-    echo "${CURRENT_BENCHMARK_TYPE_DIR} does not contain 2 or more benchmark CSVs, skipping compareBenchmarkWithPrevious()"
+  # Get the current commit hash from the nimbus-eth1 repo
+  local CURRENT_COMMIT=$(cd "${NIMBUS_ETH1_REPO}" && git rev-parse --short=8 HEAD)
+  echo ">>> Current commit: ${CURRENT_COMMIT}"
+
+  # Find the previous benchmark using git history (not file modification time)
+  local PREVIOUS_BENCHMARK_DIR_NAME=$(findPreviousBenchmarkByGitHistory "${CURRENT_COMMIT}" "${CURRENT_BENCHMARK_TYPE_DIR}")
+
+  if [ -z "${PREVIOUS_BENCHMARK_DIR_NAME}" ]; then
+    echo "No previous benchmark found in git history, skipping comparison"
     return
   fi
 
-  local CURRENT_BENCHMARK_DIR_NAME=$(find "${CURRENT_BENCHMARK_TYPE_DIR}" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %f\n' 2>/dev/null | sort -nr | head -n 1 | cut -d' ' -f2)
-  local PREVIOUS_BENCHMARK_DIR_NAME=$(find "${CURRENT_BENCHMARK_TYPE_DIR}" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %f\n' 2>/dev/null | sort -nr | head -n 2 | tail -n 1 | cut -d' ' -f2)
+  local PREVIOUS_COMMIT=$(echo "${PREVIOUS_BENCHMARK_DIR_NAME}" | sed 's/.*_//')
+  echo ">>> Previous benchmark commit (by git history): ${PREVIOUS_COMMIT}"
+  # Machine-readable line for regenerate_readme.sh to parse
+  echo "BASELINE_COMMIT=${PREVIOUS_COMMIT}"
+  echo "CONTENDER_COMMIT=${CURRENT_COMMIT}"
 
-  local CURRENT_BENCHMARK_CSV_PATH="${CURRENT_BENCHMARK_TYPE_DIR}/${CURRENT_BENCHMARK_DIR_NAME}/${BENCHMARK_FILE_NAME}"
+  # Current benchmark CSV - use the destination path since we're running during benchmark
+  local CURRENT_BENCHMARK_CSV_PATH="${DEBUG_CSV_PATH}"
   local PREVIOUS_BENCHMARK_CSV_PATH="${CURRENT_BENCHMARK_TYPE_DIR}/${PREVIOUS_BENCHMARK_DIR_NAME}/${BENCHMARK_FILE_NAME}"
+
+  if [ ! -f "${CURRENT_BENCHMARK_CSV_PATH}" ]; then
+    echo "Current benchmark CSV not found at ${CURRENT_BENCHMARK_CSV_PATH}, skipping comparison"
+    return
+  fi
+
+  if [ ! -f "${PREVIOUS_BENCHMARK_CSV_PATH}" ]; then
+    echo "Previous benchmark CSV not found at ${PREVIOUS_BENCHMARK_CSV_PATH}, skipping comparison"
+    return
+  fi
 
   if [ ! -d "${VENV_PATH}" ]; then
     python -m venv "${VENV_PATH}"
