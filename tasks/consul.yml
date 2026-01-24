@@ -6,7 +6,8 @@
   vars:
     consul_config_name: 'nimbus-eth1-benchmark-metrics'
     consul_services:
-      - name: 'nimbus-eth1-benchmark-metrics'
+      - id: 'nimbus-eth1-benchmark-metrics'
+        name: 'nimbus-eth1-benchmark-metrics'
         tags:
           - 'nimbus-eth1'
           - 'benchmarks'
@@ -23,10 +24,14 @@
             http: 'http://localhost:{{ metrics_listen_port }}/metrics'
             interval: '60s'
             timeout: '5s'
+            failures_before_warning: 1
+            failures_before_critical: 2
           - id: 'nimbus-eth1-benchmark-health'
             name: 'Benchmark Health Check'
             type: script
             script: '/opt/nimbus-benchmark/health-check.sh {{ nimbus_eth1_benchmark_type }}'
-            interval: '5m'
+            interval: '60s'
             timeout: '10s'
+            failures_before_warning: 1
+            failures_before_critical: 2
   when: consul_config_name is defined or env is defined
