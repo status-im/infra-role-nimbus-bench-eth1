@@ -5,7 +5,8 @@ set -e
 function buildBinaries() {
 
   cd "${NIMBUS_ETH1_REPO}"
-  local COMMIT=$(git rev-parse --short=8 HEAD)
+  local COMMIT
+  COMMIT=$(git rev-parse --short=8 HEAD)
 
   if [[ -f "build/nimbus_execution_client_${COMMIT}" ]]; then
     echo ">>> Binaries already exist for commit ${COMMIT}, no need to build a new nimbus binary!"
@@ -14,15 +15,65 @@ function buildBinaries() {
 
   echo ">>> Building binaries for commit ${COMMIT}..."
 
-  make -j16 update
+  local EXCLUDED_LIBS=(
+    nim-bearssl
+    nim-blscurve
+    nimbus-build-system
+    nim-chronicles
+    nim-chronos
+    nim-confutils
+    nimcrypto
+    nim-eth
+    nim-faststreams
+    nim-http-utils
+    nim-ngtcp2
+    nim-quic
+    nim-json-rpc
+    nim-json-serialization
+    nim-libbacktrace
+    nim-metrics
+    nim-nat-traversal
+    nim-results
+    nim-secp256k1
+    nim-serialization
+    nim-snappy
+    nim-sqlite3-abi
+    nim-ssz-serialization
+    nim-stew
+    nim-stint
+    nim-testutils
+    nim-toml-serialization
+    nim-unittest2
+    nim-web3
+    nim-websock
+    nim-zlib
+    nim-taskpools
+    nim-normalize
+    nim-unicodedb
+    nim-libp2p
+    nim-presto
+    nim-zxcvbn
+    nim-kzg4844
+    nim-minilru
+    nimbus-security-resources
+    NimYAML
+  )
+
+  local EXCLUDED_NIM_PACKAGES=""
+  for lib in "${EXCLUDED_LIBS[@]}"; do
+    EXCLUDED_NIM_PACKAGES+="vendor/nimbus-eth2/vendor/${lib} "
+  done
+
+  make -j16 update EXCLUDED_NIM_PACKAGES="${EXCLUDED_NIM_PACKAGES}"
   make -j16 nimbus_execution_client \
-    LOG_LEVEL="DEBUG" NIMFLAGS="-d:chronicles_colors=none -d:disableMarchNative" ROCKSDB_CI_CACHE="${NIMBUS_ETH1_REPO}/build"
+    LOG_LEVEL="DEBUG" NIMFLAGS="-d:chronicles_colors=none -d:disableMarchNative" ROCKSDB_CI_CACHE="${NIMBUS_ETH1_REPO}/build" \
+    EXCLUDED_NIM_PACKAGES="${EXCLUDED_NIM_PACKAGES}"
 
   echo ">>> renaming binaries to match commit they were built from"
   mv "build/nimbus_execution_client" "build/nimbus_execution_client_${COMMIT}"
 
   echo ">>> creating a symbolic link to the latest version"
-  ln -frs build/nimbus_execution_client_${COMMIT} build/nimbus_execution_client
+  ln -frs "build/nimbus_execution_client_${COMMIT}" build/nimbus_execution_client
 
   echo ">>> deleting copies that are older than N days"
   find build -mtime +3 -exec rm '{}' \+
