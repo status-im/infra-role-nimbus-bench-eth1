@@ -24,6 +24,12 @@ fi
 GIT_HASH=$(grep -A1 "^metadata:" "${METRICS_FILE}" | grep "git_hash:" | awk -F'"' '{print $2}')
 GIT_HASH="${GIT_HASH:-unknown}"
 
+# Check if benchmark completed (git_hash is set after a successful run)
+if [[ -z "${GIT_HASH}" || "${GIT_HASH}" == "unknown" ]]; then
+    echo "UNHEALTHY: Benchmark did not complete, no git hash recorded"
+    exit 1
+fi
+
 # Check for any failed stages (success: 0)
 if grep -q "success: 0" "${METRICS_FILE}"; then
     FAILED_STAGES=$(grep -B1 "success: 0" "${METRICS_FILE}" | grep -E "^  [a-zA-Z]" | tr -d ':' | tr '\n' ', ' | sed 's/, $//')
