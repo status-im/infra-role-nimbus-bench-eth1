@@ -28,11 +28,13 @@ function buildBinaries() {
     nim-http-utils
     nim-ngtcp2
     nim-quic
+    nim-intops
     nim-json-rpc
     nim-json-serialization
     nim-libbacktrace
     nim-metrics
     nim-nat-traversal
+    nim-lsquic
     nim-results
     nim-secp256k1
     nim-serialization
