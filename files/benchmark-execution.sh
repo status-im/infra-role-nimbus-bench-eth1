@@ -25,7 +25,7 @@ function startNimbusWithImport() {
 
 function skipOrContinueBenchmark() {
   local NIMBUS_ETH1_GIT_HASH=$(cd "${NIMBUS_ETH1_REPO}" && git rev-parse --short=8 HEAD)
-  local BENCHMARK_EXISTS=$(find "${NIMBUS_ETH1_BENCHMARKS_REPO}" -type d -name '*'"${NIMBUS_ETH1_GIT_HASH}"'*' 2>/dev/null | wc -l)
+  local BENCHMARK_EXISTS=$(find "${NIMBUS_ETH1_BENCHMARKS_REPO}/${BENCHMARKING_TYPE}-benchmark" -maxdepth 1 -type d -name '*'"${NIMBUS_ETH1_GIT_HASH}"'*' 2>/dev/null | wc -l)
 
   if [ "${BENCHMARK_EXISTS}" -gt 0 ] && [ "${FORCE_RUN}" != "true" ]; then
     echo ">>> Benchmark for ${NIMBUS_ETH1_GIT_HASH} already exists, skipping this import!"
