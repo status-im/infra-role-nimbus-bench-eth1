@@ -10,10 +10,9 @@ function initMetricsDir() {
     mkdir -p "${METRICS_DIR}"
 }
 
-function ensureMetricsFile() {
+function resetMetricsFile() {
     initMetricsDir
-    if [[ ! -f "${METRICS_FILE}" ]]; then
-        cat > "${METRICS_FILE}" << 'EOF'
+    cat > "${METRICS_FILE}" << 'EOF'
 benchmark_type: ""
 last_run_timestamp: 0
 metadata:
@@ -23,6 +22,14 @@ metadata:
   total_blocks: 0
 stages: {}
 EOF
+    # Clear stage timings from previous run
+    rm -f "${STAGE_TIMINGS_FILE}"
+}
+
+function ensureMetricsFile() {
+    initMetricsDir
+    if [[ ! -f "${METRICS_FILE}" ]]; then
+        resetMetricsFile
     fi
 }
 
@@ -134,10 +141,13 @@ function recordBenchmarkMetadata() {
 function recordBenchmarkTimestamp() {
     local timestamp=$(date +%s)
 
-    ensureMetricsFile
+    # Reset metrics at the start of each run so stale data
+    # from previous runs does not persist on failure
+    resetMetricsFile
     updateYamlField "last_run_timestamp" "${timestamp}"
 }
 
+export -f resetMetricsFile
 export -f recordStageStart
 export -f recordStageEnd
 export -f recordBenchmarkMetadata
