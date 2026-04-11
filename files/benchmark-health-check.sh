@@ -11,7 +11,7 @@ BENCHMARK_TYPE="${1:-${BENCHMARK_TYPE:-short}}"
 if [[ "${BENCHMARK_TYPE}" == "short" ]]; then
     MAX_AGE_SECONDS=36000   # 10 hours
 else
-    MAX_AGE_SECONDS=259200  # 72 hours
+    MAX_AGE_SECONDS=396000  # 110 hours
 fi
 
 # Check if metrics file exists
