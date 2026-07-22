@@ -27,6 +27,35 @@ function cloneOrFetchRepo() {
   fi
 }
 
+function nextCommitToBenchmark() {
+  local LAST_COMMIT="$1"
+
+  # newest first, so the first line is head
+  local NEW_COMMITS=$(git rev-list --first-parent "${LAST_COMMIT}..origin/${BRANCH}")
+  if [ -z "${NEW_COMMITS}" ]; then
+    return
+  fi
+
+  # column 6 of the import CSV is time spent per chunk, in nanoseconds
+  local BENCHMARK_CSV="${NIMBUS_ETH1_BENCHMARKS_REPO}/${BENCHMARKING_TYPE}-benchmark/latest/${BENCHMARK_FILE_NAME}"
+  local LAST_RUN_NANOSECONDS=$(awk -F',' 'NR>1 {sum += $6} END {print sum}' "${BENCHMARK_CSV}" 2>/dev/null)
+  local LAST_RUN_SECONDS=$((LAST_RUN_NANOSECONDS / 1000000000))
+
+  local LAST_COMMIT_TIME=$(git show -s --format=%ct "${LAST_COMMIT}")
+  local THRESHOLD=$((LAST_COMMIT_TIME + LAST_RUN_SECONDS))
+
+  local NEXT_COMMIT=$(git log --reverse --first-parent --format='%H %ct' "${LAST_COMMIT}..origin/${BRANCH}" \
+    | awk -v threshold="${THRESHOLD}" '$2 >= threshold {print $1; exit}')
+
+  # no commit landed a full run duration after the last one, but head is
+  # still unbenchmarked so run it rather than waiting for a later commit
+  if [ -z "${NEXT_COMMIT}" ]; then
+    NEXT_COMMIT=$(echo "${NEW_COMMITS}" | head -n 1)
+  fi
+
+  echo "${NEXT_COMMIT}"
+}
+
 function cloneOrFetchNimbusRepo() {
   cloneOrFetchRepo "${NIMBUS_ETH1_REPO}" "${NIMBUS_ETH1_REPO_URL}" "${BRANCH}" "true"
   
@@ -41,14 +70,16 @@ function cloneOrFetchNimbusRepo() {
       local LATEST_DIR_NAME=$(basename "$(readlink "${LATEST_SYMLINK}")")
       local LAST_COMMIT=$(echo "${LATEST_DIR_NAME}" | grep -o '_[^_]*$' | cut -c2-)
 
-      if [ -n "${LAST_COMMIT}" ]; then
+      if [ -n "${LAST_COMMIT}" ] && git cat-file -e "${LAST_COMMIT}^{commit}" 2>/dev/null; then
         echo ">>> Found last benchmarked commit: ${LAST_COMMIT}"
-        local NEXT_COMMIT=$(git rev-list --reverse "${LAST_COMMIT}..origin/${BRANCH}" | head -n 1)
+        local NEXT_COMMIT=$(nextCommitToBenchmark "${LAST_COMMIT}")
         if [ -n "${NEXT_COMMIT}" ]; then
           TARGET_COMMIT="${NEXT_COMMIT}"
           echo ">>> Using next commit: ${TARGET_COMMIT}"
         else
-          echo ">>> No new commits found, using latest"
+          # head is already benchmarked, skipOrContinueBenchmark stops the run
+          TARGET_COMMIT="${LAST_COMMIT}"
+          echo ">>> Head is already benchmarked, nothing to do"
         fi
       fi
     fi
