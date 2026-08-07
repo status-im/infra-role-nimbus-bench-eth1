@@ -2,6 +2,16 @@
 # vim: ft=sh
 set -e
 
+function excludedNimPackages() {
+  local packages=""
+  local vendor_dir
+  for vendor_dir in "${NIMBUS_ETH1_REPO}"/vendor/nimbus-eth2/vendor/*; do
+    [[ -d "${vendor_dir}" ]] || continue
+    packages+="vendor/nimbus-eth2/vendor/$(basename "${vendor_dir}") "
+  done
+  echo "${packages}"
+}
+
 function buildBinaries() {
 
   cd "${NIMBUS_ETH1_REPO}"
@@ -15,56 +25,12 @@ function buildBinaries() {
 
   echo ">>> Building binaries for commit ${COMMIT}..."
 
-  local EXCLUDED_LIBS=(
-    nim-bearssl
-    nim-blscurve
-    nimbus-build-system
-    nim-chronicles
-    nim-chronos
-    nim-confutils
-    nimcrypto
-    nim-eth
-    nim-faststreams
-    nim-http-utils
-    nim-ngtcp2
-    nim-quic
-    nim-intops
-    nim-json-rpc
-    nim-json-serialization
-    nim-libbacktrace
-    nim-metrics
-    nim-nat-traversal
-    nim-lsquic
-    nim-results
-    nim-secp256k1
-    nim-serialization
-    nim-snappy
-    nim-sqlite3-abi
-    nim-ssz-serialization
-    nim-stew
-    nim-stint
-    nim-testutils
-    nim-toml-serialization
-    nim-unittest2
-    nim-web3
-    nim-websock
-    nim-zlib
-    nim-taskpools
-    nim-normalize
-    nim-unicodedb
-    nim-libp2p
-    nim-presto
-    nim-zxcvbn
-    nim-kzg4844
-    nim-minilru
-    nimbus-security-resources
-    NimYAML
-  )
+  local EXCLUDED_NIM_PACKAGES
+  EXCLUDED_NIM_PACKAGES="$(excludedNimPackages)"
 
-  local EXCLUDED_NIM_PACKAGES=""
-  for lib in "${EXCLUDED_LIBS[@]}"; do
-    EXCLUDED_NIM_PACKAGES+="vendor/nimbus-eth2/vendor/${lib} "
-  done
+  make -j16 update EXCLUDED_NIM_PACKAGES="${EXCLUDED_NIM_PACKAGES}"
+
+  EXCLUDED_NIM_PACKAGES="$(excludedNimPackages)"
 
   make -j16 update EXCLUDED_NIM_PACKAGES="${EXCLUDED_NIM_PACKAGES}"
   make -j16 nimbus_execution_client \
