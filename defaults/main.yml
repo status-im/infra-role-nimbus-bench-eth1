@@ -41,3 +41,9 @@ nimbus_eth1_era_dir: '/data/era'
 
 # Benchmark configuration
 nimbus_eth1_max_blocks_to_import: 1000000
+
+# Special Discord alerting
+nimbus_eth1_benchmark_discord_alerts: true
+nimbus_eth1_benchmark_discord_webhook_url: '{{ lookup("vault", "nimbus/eth1/benchmark", field="discord_webhook_url", override=True)}}'
+# will mention @siddarthkay for failures
+nimbus_eth1_benchmark_discord_mention_id: '{{ lookup("vault", "nimbus/eth1/benchmark", field="discord_mention_user_id", override=True)}}'
