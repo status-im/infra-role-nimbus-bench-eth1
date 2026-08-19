@@ -1,14 +1,19 @@
 ---
-- name: Create metrics directories
+- name: Create scripts directory
   file:
-    path: "{{ item }}"
+    path: /opt/nimbus-benchmark
     state: directory
     owner: "{{ nimbus_eth1_service_user }}"
     group: "{{ nimbus_eth1_service_group }}"
     mode: '0755'
-  with_items:
-    - /var/lib/nimbus-benchmark-metrics
-    - /opt/nimbus-benchmark
+
+- name: Create metrics directory
+  file:
+    path: /var/lib/nimbus-benchmark-metrics
+    state: directory
+    owner: "{{ nimbus_eth1_service_user }}"
+    group: consul
+    mode: '0775'
 
 - name: Copy metrics collector script
   copy:
