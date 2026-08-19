@@ -21,7 +21,8 @@ notifyDiscord() {
 
     [[ -f "${DISCORD_STATE_FILE}" ]] && return 0
 
-    date +%s >"${DISCORD_STATE_FILE}" 2>/dev/null || return 0
+    date +%s >"${DISCORD_STATE_FILE}" 2>/dev/null \
+      || echo "WARNING: cannot write ${DISCORD_STATE_FILE}"
 
     message="[critical] ${BENCHMARK_TYPE} benchmark on $(hostname -s): ${message}"
     [[ -n "${DISCORD_MENTION_ID:-}" ]] && message="<@${DISCORD_MENTION_ID}> ${message}"
