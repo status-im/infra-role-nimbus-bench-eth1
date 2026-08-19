@@ -42,6 +42,7 @@ callAndLogFunc 'cloneOrFetchNimbusRepo'
 ISO_TIMESTAMP=$(date +"%Y%m%dT%H%M%S")
 GIT_HASH=$(cd "${NIMBUS_ETH1_REPO}" && git rev-parse --short=8 HEAD)
 BENCHMARK_DESTINATION="${NIMBUS_ETH1_BENCHMARKS_REPO}/${BENCHMARKING_TYPE}-benchmark/${ISO_TIMESTAMP}_${GIT_HASH}"
+recordBenchmarkMetadata "${GIT_HASH}" "" "" 0
 
 callAndLogFunc 'buildBinaries'
 # decide whether to skip or continue

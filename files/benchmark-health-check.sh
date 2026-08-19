@@ -63,17 +63,21 @@ fi
 # Extract git hash for error reporting
 GIT_HASH=$(grep -A1 "^metadata:" "${METRICS_FILE}" | grep "git_hash:" | awk -F'"' '{print $2}')
 GIT_HASH="${GIT_HASH:-unknown}"
+COMMIT_REF="${GIT_HASH}"
+if [[ "${GIT_HASH}" != "unknown" && -n "${NIMBUS_ETH1_REPO_URL:-}" ]]; then
+    COMMIT_REF="<${NIMBUS_ETH1_REPO_URL%.git}/commit/${GIT_HASH}>"
+fi
 
 # Check for any failed stages (success: 0)
 if grep -q "success: 0" "${METRICS_FILE}"; then
-    FAILED_STAGES=$(grep -B1 "success: 0" "${METRICS_FILE}" | grep -E "^  [a-zA-Z]" | tr -d ':' | tr '\n' ', ' | sed 's/, $//')
-    unhealthy "Failed stages: ${FAILED_STAGES} (nimbus-eth1 commit: ${GIT_HASH})"
+    FAILED_STAGES=$(grep -B1 "success: 0" "${METRICS_FILE}" | grep -E "^  [a-zA-Z]" | tr -d ' :' | paste -sd ',' - | sed 's/,/, /g')
+    unhealthy "Failed stages: ${FAILED_STAGES} (nimbus-eth1 commit: ${COMMIT_REF})"
 fi
 
 # Check if benchmark is stale
 LAST_RUN=$(grep "^last_run_timestamp:" "${METRICS_FILE}" | awk '{print $2}')
 if [[ -z "${LAST_RUN}" || "${LAST_RUN}" == "0" ]]; then
-    unhealthy "No benchmark has completed yet (nimbus-eth1 commit: ${GIT_HASH})"
+    unhealthy "No benchmark has completed yet (nimbus-eth1 commit: ${COMMIT_REF})"
 fi
 
 CURRENT_TIME=$(date +%s)
@@ -82,12 +86,12 @@ AGE=$((CURRENT_TIME - LAST_RUN))
 if [[ ${AGE} -gt ${MAX_AGE_SECONDS} ]]; then
     HOURS_AGO=$((AGE / 3600))
     MAX_HOURS=$((MAX_AGE_SECONDS / 3600))
-    unhealthy "Last ${BENCHMARK_TYPE} benchmark was ${HOURS_AGO}h ago, exceeds ${MAX_HOURS}h threshold (nimbus-eth1 commit: ${GIT_HASH})"
+    unhealthy "Last ${BENCHMARK_TYPE} benchmark was ${HOURS_AGO}h ago, exceeds ${MAX_HOURS}h threshold (nimbus-eth1 commit: ${COMMIT_REF})"
 fi
 
 # All checks passed, clearing the marker so the next outage alerts again
 rm -f "${DISCORD_STATE_FILE}" 2>/dev/null || true
 
 HOURS_AGO=$((AGE / 3600))
-echo "HEALTHY: Last ${BENCHMARK_TYPE} benchmark ${HOURS_AGO}h ago, all stages succeeded (nimbus-eth1 commit: ${GIT_HASH})"
+echo "HEALTHY: Last ${BENCHMARK_TYPE} benchmark ${HOURS_AGO}h ago, all stages succeeded (nimbus-eth1 commit: ${COMMIT_REF})"
 exit 0
