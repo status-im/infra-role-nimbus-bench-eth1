@@ -14,8 +14,8 @@ function cloneOrFetchRepo() {
   if [ -d "${repo_path}/.git" ]; then
     cd "${repo_path}"
     if [ "${clean_repo}" = "true" ]; then
-      git clean -fdx >/dev/null 2>&1
-      git submodule foreach --recursive git clean -fdx >/dev/null 2>&1
+      git clean -ffdx >/dev/null 2>&1
+      git submodule foreach --recursive git clean -ffdx >/dev/null 2>&1
     fi
     echo ">>> Fetching latest changes for $(basename "${repo_path}")..."
     git fetch
