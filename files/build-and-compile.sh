@@ -34,7 +34,7 @@ function buildBinaries() {
 
   make -j16 update EXCLUDED_NIM_PACKAGES="${EXCLUDED_NIM_PACKAGES}"
   make -j16 nimbus_execution_client \
-    LOG_LEVEL="DEBUG" NIMFLAGS="-d:chronicles_colors=none -d:disableMarchNative" ROCKSDB_CI_CACHE="${NIMBUS_ETH1_REPO}/build" \
+    LOG_LEVEL="DEBUG" NIMFLAGS="-d:chronicles_colors=none -d:disableMarchNative" ROCKSDB_CI_CACHE="${ROCKSDB_CACHE_DIR}" \
     EXCLUDED_NIM_PACKAGES="${EXCLUDED_NIM_PACKAGES}"
 
   echo ">>> renaming binaries to match commit they were built from"
