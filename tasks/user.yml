@@ -12,6 +12,14 @@
     value: 'false'
   become_user: '{{ nimbus_eth1_service_user }}'
 
+# FIXME: temp hack to escape github 401 for basic auth on anonymous git pull
+- name: Force git to use HTTP/1.1 for GitHub fetches
+  git_config:
+    scope: 'global'
+    name: 'http.version'
+    value: 'HTTP/1.1'
+  become_user: '{{ nimbus_eth1_service_user }}'
+
 - name: Sudoers file to let non-root users start jobs
   template:
     src: 'builds_sudoers.j2'
