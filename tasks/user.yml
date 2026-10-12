@@ -20,6 +20,41 @@
     value: 'HTTP/1.1'
   become_user: '{{ nimbus_eth1_service_user }}'
 
+- name: Set git user name
+  git_config:
+    scope: 'global'
+    name: 'user.name'
+    value: '{{ nimbus_eth1_git_user_name }}'
+  become_user: '{{ nimbus_eth1_service_user }}'
+
+- name: Set git user email
+  git_config:
+    scope: 'global'
+    name: 'user.email'
+    value: '{{ nimbus_eth1_git_user_email }}'
+  become_user: '{{ nimbus_eth1_service_user }}'
+
+- name: Sign commits with SSH key instead of GPG
+  git_config:
+    scope: 'global'
+    name: 'gpg.format'
+    value: 'ssh'
+  become_user: '{{ nimbus_eth1_service_user }}'
+
+- name: Set SSH signing key
+  git_config:
+    scope: 'global'
+    name: 'user.signingkey'
+    value: '{{ nimbus_eth1_git_signing_key_file }}'
+  become_user: '{{ nimbus_eth1_service_user }}'
+
+- name: Always sign commits
+  git_config:
+    scope: 'global'
+    name: 'commit.gpgsign'
+    value: 'true'
+  become_user: '{{ nimbus_eth1_service_user }}'
+
 - name: Sudoers file to let non-root users start jobs
   template:
     src: 'builds_sudoers.j2'

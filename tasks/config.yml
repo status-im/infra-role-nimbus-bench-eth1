@@ -54,3 +54,12 @@
   when:
     - nimbus_eth1_benchmarks_ssh_key_file is defined
     - ssh_key_check.rc != 0
+
+- name: Write SSH commit signing key
+  copy:
+    dest: '{{ nimbus_eth1_git_signing_key_file }}'
+    content: |
+      {{ nimbus_eth1_git_signing_key }}
+    owner: '{{ nimbus_eth1_service_user }}'
+    group: '{{ nimbus_eth1_service_group }}'
+    mode: 0400

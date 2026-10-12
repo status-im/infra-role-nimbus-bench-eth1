@@ -31,6 +31,12 @@ nimbus_eth1_benchmarks_repo_url: 'git@github.com:status-im/nimbus-eth1-benchmark
 nimbus_eth1_benchmarks_ssh_key_file: '{{ nimbus_eth1_service_user_ssh_dir }}/id_rsa'
 nimbus_eth1_benchmarks_repo_ssh_key: '{{lookup("vault", "nimbus/eth1/benchmark", field="github_webhook_ssh_key", override=True)}}'
 
+# Git identity and commit signing for pushes to the benchmarks repo.
+nimbus_eth1_git_user_name: 'Autobot'
+nimbus_eth1_git_user_email: '40699771+status-im-auto@users.noreply.github.com'
+nimbus_eth1_git_signing_key_file: '{{ nimbus_eth1_service_user_ssh_dir }}/id_ed25519_signing'
+nimbus_eth1_git_signing_key: '{{lookup("vault", "nimbus/eth1/benchmark", field="github_signing_ssh_key", override=True)}}'
+
 # Benchmark paths
 nimbus_eth1_benchmarks_repo: '/data/status-im/nimbus-eth1-benchmarks'
 nimbus_eth1_repo: '/data/status-im/nimbus-eth1'
