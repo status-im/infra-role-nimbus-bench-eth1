@@ -63,3 +63,18 @@
     owner: '{{ nimbus_eth1_service_user }}'
     group: '{{ nimbus_eth1_service_group }}'
     mode: 0400
+
+- name: Derive SSH commit signing public key
+  shell: >
+    ssh-keygen -y -f '{{ nimbus_eth1_git_signing_key_file }}'
+    > '{{ nimbus_eth1_git_signing_key_file }}.pub'
+  args:
+    creates: '{{ nimbus_eth1_git_signing_key_file }}.pub'
+  become_user: '{{ nimbus_eth1_service_user }}'
+
+- name: Set SSH commit signing public key permissions
+  file:
+    path:  '{{ nimbus_eth1_git_signing_key_file }}.pub'
+    owner: '{{ nimbus_eth1_service_user }}'
+    group: '{{ nimbus_eth1_service_group }}'
+    mode:  0444
