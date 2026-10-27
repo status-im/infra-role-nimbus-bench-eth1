@@ -169,11 +169,11 @@ function publishBenchmarkingResults() {
   cd "${NIMBUS_ETH1_BENCHMARKS_REPO}"
   # to debug git push failures
   export GIT_TRACE=1
-  git fetch
-  git add .
-  git commit -m "${BENCHMARKING_TYPE}-benchmark: publish metrics and report"
-  git pull --rebase -X ours
-  git push
+  git fetch || return 1
+  git add . || return 1
+  git commit -m "${BENCHMARKING_TYPE}-benchmark: publish metrics and report" || return 1
+  git pull --rebase -X ours || return 1
+  git push || return 1
 
   echo ">>> Running regenerate_readme.sh to update repository README"
   "${NIMBUS_ETH1_BENCHMARKS_REPO}/regenerate_readme.sh"
@@ -181,9 +181,9 @@ function publishBenchmarkingResults() {
   if git diff --quiet && git diff --cached --quiet; then
     echo "No changes detected after running regenerate_readme.sh, skipping README commit"
   else
-    git add .
-    git commit -m "chore: update ${BENCHMARKING_TYPE} benchmark Readme"
-    git push
+    git add . || return 1
+    git commit -m "chore: update ${BENCHMARKING_TYPE} benchmark Readme" || return 1
+    git push || return 1
   fi
 }
 
