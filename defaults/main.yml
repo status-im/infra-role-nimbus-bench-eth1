@@ -8,6 +8,35 @@ nimbus_eth1_service_user_ssh_config: '{{ nimbus_eth1_service_user_ssh_dir }}/con
 nimbus_eth1_service_user: 'nimbus'
 nimbus_eth1_service_group: 'staff'
 
+# Benchmark runs are started by a GitHub Actions workflow through a self-hosted runner.
+# Request, log and result of a run are exchanged with the runner through this directory.
+nimbus_eth1_benchmark_trigger_dir: '/var/lib/nimbus-benchmark-trigger'
+
+# GitHub Actions runner
+nimbus_eth1_github_runner_repo_url: 'https://github.com/status-im/nimbus-eth1-benchmarks'
+nimbus_eth1_github_runner_name: '{{ inventory_hostname }}'
+nimbus_eth1_github_runner_labels: ['nimbus-bench-{{ nimbus_eth1_benchmark_type }}']
+nimbus_eth1_github_runner_user: 'ghrunner'
+nimbus_eth1_github_runner_group: 'ghrunner'
+nimbus_eth1_github_runner_path: '/var/lib/github-runner'
+nimbus_eth1_github_runner_service_name: 'github-runner-nimbus-bench'
+nimbus_eth1_github_runner_version: '2.336.0'
+nimbus_eth1_github_runner_tarball: 'actions-runner-linux-x64-{{ nimbus_eth1_github_runner_version }}.tar.gz'
+nimbus_eth1_github_runner_tarball_url: 'https://github.com/actions/runner/releases/download/v{{ nimbus_eth1_github_runner_version }}/{{ nimbus_eth1_github_runner_tarball }}'
+nimbus_eth1_github_runner_tarball_sha256: '04cf0be1aff4c3ec3554466c39124ca250e3effd8873bb7e8d68535aa9505d5d'
+
+# The role registers the runner and has the scheduler of the benchmarks repo start runs on this host.
+# Both go through the GitHub API, called from the machine Ansible runs on with a token that has admin
+# rights on that repo. By default that is the token of the GitHub CLI, see `gh auth status`.
+nimbus_eth1_github_api_url: 'https://api.github.com'
+nimbus_eth1_github_api_repo_url: '{{ nimbus_eth1_github_api_url }}/repos{{ nimbus_eth1_github_runner_repo_url | urlsplit("path") }}'
+nimbus_eth1_github_api_token: '{{ lookup("pipe", "gh auth token") }}'
+
+# The scheduler starts runs of the benchmark types listed in this variable of the benchmarks repo
+nimbus_eth1_benchmark_schedule_variable: 'BENCHMARK_SCHEDULE_TYPES'
+# false takes the benchmark of this host off that list, runs can still be started by hand
+nimbus_eth1_benchmark_scheduled: true
+
 # Metrics Configuration
 metrics_listen_host: '0.0.0.0'
 metrics_listen_port: 9091
@@ -29,13 +58,13 @@ nimbus_eth1_repo_branch: 'master'
 nimbus_eth1_repo_url: 'https://github.com/status-im/nimbus-eth1'
 nimbus_eth1_benchmarks_repo_url: 'git@github.com:status-im/nimbus-eth1-benchmarks.git'
 nimbus_eth1_benchmarks_ssh_key_file: '{{ nimbus_eth1_service_user_ssh_dir }}/id_rsa'
-nimbus_eth1_benchmarks_repo_ssh_key: '{{lookup("vault", "nimbus/eth1/benchmark", field="github_webhook_ssh_key", override=True)}}'
+nimbus_eth1_benchmarks_repo_ssh_key: '{{lookup("community.general.passwordstore", "services/nimbus-eth1-benchmark/deploy-key", returnall=true)}}'
 
 # Git identity and commit signing for pushes to the benchmarks repo.
 nimbus_eth1_git_user_name: 'Autobot'
 nimbus_eth1_git_user_email: '40699771+status-im-auto@users.noreply.github.com'
 nimbus_eth1_git_signing_key_file: '{{ nimbus_eth1_service_user_ssh_dir }}/id_ed25519_signing'
-nimbus_eth1_git_signing_key: '{{lookup("vault", "nimbus/eth1/benchmark", field="github_signing_ssh_key", override=True)}}'
+nimbus_eth1_git_signing_key: '{{lookup("community.general.passwordstore", "services/nimbus-eth1-benchmark/signing-key", returnall=true)}}'
 
 # Benchmark paths
 nimbus_eth1_benchmarks_repo: '/data/status-im/nimbus-eth1-benchmarks'
@@ -49,8 +78,12 @@ nimbus_eth1_rocksdb_cache_dir: '{{ nimbus_eth1_service_path }}/rocksdb-cache'
 # Benchmark configuration
 nimbus_eth1_max_blocks_to_import: 1000000
 
+nimbus_eth1_benchmark_gcc_version: 11
+# gcc, g++ and cc in here point at that version, the build has it first in PATH
+nimbus_eth1_benchmark_toolchain_dir: '/opt/nimbus-benchmark/toolchain'
+
 # Special Discord alerting
 nimbus_eth1_benchmark_discord_alerts: true
-nimbus_eth1_benchmark_discord_webhook_url: '{{ lookup("vault", "nimbus/eth1/benchmark", field="discord_webhook_url", override=True)}}'
+nimbus_eth1_benchmark_discord_webhook_url: '{{lookup("community.general.passwordstore", "services/nimbus-eth1-benchmark/discord-webhook")}}'
 # will mention @siddarthkay for failures
-nimbus_eth1_benchmark_discord_mention_id: '{{ lookup("vault", "nimbus/eth1/benchmark", field="discord_mention_user_id", override=True)}}'
+nimbus_eth1_benchmark_discord_mention_id: '{{lookup("community.general.passwordstore", "services/nimbus-eth1-benchmark/discord-mention-id")}}'

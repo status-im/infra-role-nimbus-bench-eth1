@@ -1,0 +1,130 @@
+---
+
+- name: Create GitHub runner group
+  group:
+    name: '{{ nimbus_eth1_github_runner_group }}'
+    system: true
+
+- name: Create GitHub runner user
+  user:
+    name:   '{{ nimbus_eth1_github_runner_user }}'
+    group:  '{{ nimbus_eth1_github_runner_group }}'
+    home:   '{{ nimbus_eth1_github_runner_path }}'
+    shell:  '/bin/bash'
+    system: true
+
+- name: Create benchmark trigger directories
+  file:
+    path:  '{{ item.path }}'
+    owner: '{{ item.owner }}'
+    group: '{{ item.group }}'
+    state: 'directory'
+    mode:  0755
+  with_items:
+    - { path: '{{ nimbus_eth1_benchmark_trigger_dir }}',          owner: '{{ nimbus_eth1_service_user }}',       group: '{{ nimbus_eth1_service_group }}'       }
+    # log, status and summary of each run, written by the benchmark
+    - { path: '{{ nimbus_eth1_benchmark_trigger_dir }}/runs',     owner: '{{ nimbus_eth1_service_user }}',       group: '{{ nimbus_eth1_service_group }}'       }
+    # parameters of the next run, written by the runner
+    - { path: '{{ nimbus_eth1_benchmark_trigger_dir }}/requests', owner: '{{ nimbus_eth1_github_runner_user }}', group: '{{ nimbus_eth1_github_runner_group }}' }
+
+- name: Check if the runner is installed
+  stat:
+    path: '{{ nimbus_eth1_github_runner_path }}/config.sh'
+  register: github_runner_config
+
+- name: Download GitHub runner tarball
+  get_url:
+    url:      '{{ nimbus_eth1_github_runner_tarball_url }}'
+    dest:     '/tmp/{{ nimbus_eth1_github_runner_tarball }}'
+    checksum: 'sha256:{{ nimbus_eth1_github_runner_tarball_sha256 }}'
+    mode:     0640
+  when: not github_runner_config.stat.exists
+
+- name: Unpack GitHub runner tarball
+  unarchive:
+    src:   '/tmp/{{ nimbus_eth1_github_runner_tarball }}'
+    dest:  '{{ nimbus_eth1_github_runner_path }}'
+    owner: '{{ nimbus_eth1_github_runner_user }}'
+    group: '{{ nimbus_eth1_github_runner_group }}'
+    remote_src: true
+  when: not github_runner_config.stat.exists
+
+- name: Check if the runner is registered
+  stat:
+    path: '{{ nimbus_eth1_github_runner_path }}/.credentials'
+  register: github_runner_credentials
+
+# Asked for on the machine Ansible runs on. The host only gets to see the registration token,
+# which is good for an hour and for nothing but registering a runner.
+- name: Request a registration token for the runner
+  uri:
+    url:    '{{ nimbus_eth1_github_api_repo_url }}/actions/runners/registration-token'
+    method: 'POST'
+    url_username: 'x-access-token'
+    url_password: '{{ nimbus_eth1_github_api_token }}'
+    force_basic_auth: true
+    headers:
+      Accept: 'application/vnd.github+json'
+    # a refusal is reported by the next task, the output of this one is hidden
+    status_code: [201, 401, 403, 404]
+  register: github_runner_registration
+  delegate_to: localhost
+  become: false
+  no_log: true
+  when: not github_runner_credentials.stat.exists
+
+- name: Verify runner registration token
+  assert:
+    that: github_runner_registration.status == 201
+    fail_msg: >-
+      GitHub answered {{ github_runner_registration.status }} to the request for a registration token.
+      The token in nimbus_eth1_github_api_token needs admin rights on {{ nimbus_eth1_github_runner_repo_url }}.
+    quiet: true
+  when: not github_runner_credentials.stat.exists
+
+- name: Register the runner
+  shell: >-
+    ./config.sh --unattended --replace
+    --url {{ nimbus_eth1_github_runner_repo_url | quote }}
+    --token "${RUNNER_TOKEN}"
+    --name {{ nimbus_eth1_github_runner_name | quote }}
+    --labels {{ nimbus_eth1_github_runner_labels | join(",") | quote }}
+    --work {{ (nimbus_eth1_github_runner_path + "/work") | quote }}
+  args:
+    chdir: '{{ nimbus_eth1_github_runner_path }}'
+  # the token goes through the environment to stay out of the task output and syslog
+  environment:
+    RUNNER_TOKEN: '{{ github_runner_registration.json.token }}'
+  become_user: '{{ nimbus_eth1_github_runner_user }}'
+  when: not github_runner_credentials.stat.exists
+
+- name: Copy entrypoint for the runner
+  copy:
+    src:   '{{ nimbus_eth1_github_runner_path }}/bin/runsvc.sh'
+    dest:  '{{ nimbus_eth1_github_runner_path }}/runsvc.sh'
+    owner: '{{ nimbus_eth1_github_runner_user }}'
+    group: '{{ nimbus_eth1_github_runner_group }}'
+    mode:  0750
+    remote_src: true
+
+- name: Sudoers file to let the runner start and stop the benchmark
+  template:
+    src:  'github_runner_sudoers.j2'
+    dest: '/etc/sudoers.d/72-{{ nimbus_eth1_service_name }}-github-runner'
+    mode: 0440
+    validate: 'visudo -cf %s'
+
+- name: Create systemd Unit file for the runner
+  template:
+    src:  'github-runner.service.j2'
+    dest: '/etc/systemd/system/{{ nimbus_eth1_github_runner_service_name }}.service'
+    mode: 0644
+  notify:
+    - restart github runner
+
+- name: Start and enable the runner
+  systemd:
+    name: '{{ nimbus_eth1_github_runner_service_name }}'
+    enabled: true
+    state: started
+    daemon_reload: true

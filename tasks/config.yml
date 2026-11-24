@@ -9,6 +9,10 @@
   with_items:
     - '{{ nimbus_eth1_service_path }}'
     - '{{ nimbus_eth1_service_scripts_base }}'
+    # the benchmark clones its repos and keeps run data here, /data itself belongs to root
+    - '{{ nimbus_eth1_repo | dirname }}'
+    - '{{ nimbus_eth1_benchmarks_repo | dirname }}'
+    - '{{ nimbus_eth1_host_benchmarks_dir }}'
 
 - name: Create SSH config directory
   file:
@@ -41,7 +45,9 @@
   failed_when: false
   changed_when: false
   check_mode: no
-  when: nimbus_eth1_benchmarks_ssh_key_file is defined
+  when:
+    - nimbus_eth1_benchmarks_repo_ssh_key | default("", true) | length > 0
+    - nimbus_eth1_benchmarks_ssh_key_file is defined
 
 - name: Append SSH private key
   copy:
@@ -52,6 +58,7 @@
     group: '{{ nimbus_eth1_service_group }}'
     mode: 0400
   when:
+    - nimbus_eth1_benchmarks_repo_ssh_key | default("", true) | length > 0
     - nimbus_eth1_benchmarks_ssh_key_file is defined
     - ssh_key_check.rc != 0
 
@@ -63,6 +70,12 @@
     owner: '{{ nimbus_eth1_service_user }}'
     group: '{{ nimbus_eth1_service_group }}'
     mode: 0400
+  when: nimbus_eth1_git_signing_key | default("", true) | length > 0
+
+- name: Check if SSH commit signing key is present
+  stat:
+    path: '{{ nimbus_eth1_git_signing_key_file }}'
+  register: signing_key_stat
 
 - name: Derive SSH commit signing public key
   shell: >
@@ -71,6 +84,7 @@
   args:
     creates: '{{ nimbus_eth1_git_signing_key_file }}.pub'
   become_user: '{{ nimbus_eth1_service_user }}'
+  when: signing_key_stat.stat.exists
 
 - name: Set SSH commit signing public key permissions
   file:
@@ -78,3 +92,4 @@
     owner: '{{ nimbus_eth1_service_user }}'
     group: '{{ nimbus_eth1_service_group }}'
     mode:  0444
+  when: signing_key_stat.stat.exists

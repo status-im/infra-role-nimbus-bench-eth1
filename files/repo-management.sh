@@ -56,31 +56,48 @@ function nextCommitToBenchmark() {
   echo "${NEXT_COMMIT}"
 }
 
+# Newest commit on the branch that already has results. The latest symlink is not
+# used for this, it follows the last run and a re-run of an old commit would drag
+# the automatic selection back to commits that are long done.
+function lastBenchmarkedCommit() {
+  local RESULTS_DIR="${NIMBUS_ETH1_BENCHMARKS_REPO}/${BENCHMARKING_TYPE}-benchmark"
+
+  [ -d "${RESULTS_DIR}" ] || return 0
+
+  # result directories are named <timestamp>_<short hash>
+  awk 'NR == FNR { done[$0] = 1; next } substr($0, 1, 8) in done { print; exit }' \
+    <(find "${RESULTS_DIR}" -mindepth 1 -maxdepth 1 -type d -name '*_*' | sed 's/.*_//' | cut -c1-8) \
+    <(git rev-list --first-parent "origin/${BRANCH}")
+}
+
 function cloneOrFetchNimbusRepo() {
   cloneOrFetchRepo "${NIMBUS_ETH1_REPO}" "${NIMBUS_ETH1_REPO_URL}" "${BRANCH}" "true"
-  
+
   cd "${NIMBUS_ETH1_REPO}"
   local TARGET_COMMIT="origin/${BRANCH}"
 
+  if [ -n "${REQUESTED_COMMIT:-}" ]; then
+    # results are published as part of the history of the branch, so only its commits qualify
+    if ! git merge-base --is-ancestor "${REQUESTED_COMMIT}^{commit}" "origin/${BRANCH}" 2>/dev/null; then
+      echo ">>> Commit ${REQUESTED_COMMIT} is not part of ${BRANCH}, refusing to benchmark it"
+      return 1
+    fi
+    TARGET_COMMIT="${REQUESTED_COMMIT}"
+    echo ">>> Using requested commit: ${TARGET_COMMIT}"
   # Find next commit to benchmark if not forcing a run
-  if [ "${FORCE_RUN}" != "true" ] && [ -d "${NIMBUS_ETH1_BENCHMARKS_REPO}" ]; then
-    local LATEST_SYMLINK="${NIMBUS_ETH1_BENCHMARKS_REPO}/${BENCHMARKING_TYPE}-benchmark/latest"
+  elif [ "${FORCE_RUN}" != "true" ] && [ -d "${NIMBUS_ETH1_BENCHMARKS_REPO}" ]; then
+    local LAST_COMMIT=$(lastBenchmarkedCommit)
 
-    if [ -L "${LATEST_SYMLINK}" ] && [ -d "${LATEST_SYMLINK}" ]; then
-      local LATEST_DIR_NAME=$(basename "$(readlink "${LATEST_SYMLINK}")")
-      local LAST_COMMIT=$(echo "${LATEST_DIR_NAME}" | grep -o '_[^_]*$' | cut -c2-)
-
-      if [ -n "${LAST_COMMIT}" ] && git cat-file -e "${LAST_COMMIT}^{commit}" 2>/dev/null; then
-        echo ">>> Found last benchmarked commit: ${LAST_COMMIT}"
-        local NEXT_COMMIT=$(nextCommitToBenchmark "${LAST_COMMIT}")
-        if [ -n "${NEXT_COMMIT}" ]; then
-          TARGET_COMMIT="${NEXT_COMMIT}"
-          echo ">>> Using next commit: ${TARGET_COMMIT}"
-        else
-          # head is already benchmarked, skipOrContinueBenchmark stops the run
-          TARGET_COMMIT="${LAST_COMMIT}"
-          echo ">>> Head is already benchmarked, nothing to do"
-        fi
+    if [ -n "${LAST_COMMIT}" ]; then
+      echo ">>> Found last benchmarked commit: ${LAST_COMMIT}"
+      local NEXT_COMMIT=$(nextCommitToBenchmark "${LAST_COMMIT}")
+      if [ -n "${NEXT_COMMIT}" ]; then
+        TARGET_COMMIT="${NEXT_COMMIT}"
+        echo ">>> Using next commit: ${TARGET_COMMIT}"
+      else
+        # head is already benchmarked, skipOrContinueBenchmark stops the run
+        TARGET_COMMIT="${LAST_COMMIT}"
+        echo ">>> Head is already benchmarked, nothing to do"
       fi
     fi
   fi

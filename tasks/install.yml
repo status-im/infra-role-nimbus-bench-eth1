@@ -5,3 +5,27 @@
       - build-essential
       - librocksdb-dev
       - python3-pandas
+      - 'gcc-{{ nimbus_eth1_benchmark_gcc_version }}'
+      - 'g++-{{ nimbus_eth1_benchmark_gcc_version }}'
+
+- name: Create directory for the compiler of the benchmark
+  file:
+    path:  '{{ nimbus_eth1_benchmark_toolchain_dir }}/bin'
+    state: 'directory'
+    mode:  0755
+
+# The build looks its compiler up by name, these names lead to the chosen version
+- name: Link the compiler of the benchmark
+  file:
+    src:   '/usr/bin/{{ item.target }}-{{ nimbus_eth1_benchmark_gcc_version }}'
+    dest:  '{{ nimbus_eth1_benchmark_toolchain_dir }}/bin/{{ item.name }}'
+    state: 'link'
+  with_items:
+    - { name: 'gcc',        target: 'gcc' }
+    - { name: 'cc',         target: 'gcc' }
+    - { name: 'g++',        target: 'g++' }
+    - { name: 'c++',        target: 'g++' }
+    - { name: 'cpp',        target: 'cpp' }
+    - { name: 'gcc-ar',     target: 'gcc-ar' }
+    - { name: 'gcc-nm',     target: 'gcc-nm' }
+    - { name: 'gcc-ranlib', target: 'gcc-ranlib' }

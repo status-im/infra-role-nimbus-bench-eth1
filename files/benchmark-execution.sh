@@ -29,6 +29,8 @@ function skipOrContinueBenchmark() {
 
   if [ "${BENCHMARK_EXISTS}" -gt 0 ] && [ "${FORCE_RUN}" != "true" ]; then
     echo ">>> Benchmark for ${NIMBUS_ETH1_GIT_HASH} already exists, skipping this import!"
-    exit 1
+    # nothing to do is not a failure, the job reports it as skipped
+    RUN_SKIPPED="true"
+    exit 0
   fi
 }

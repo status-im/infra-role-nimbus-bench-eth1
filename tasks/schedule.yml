@@ -1,0 +1,53 @@
+---
+# The scheduler of the benchmarks repo starts runs of the benchmark types listed in a variable of
+# that repo. The list is read and written on the machine Ansible runs on.
+- name: Schedule the benchmark
+  delegate_to: localhost
+  become: false
+  module_defaults:
+    uri:
+      url_username: 'x-access-token'
+      url_password: '{{ nimbus_eth1_github_api_token }}'
+      force_basic_auth: true
+      body_format: 'json'
+      headers:
+        Accept: 'application/vnd.github+json'
+  vars:
+    schedule_variables_url: '{{ nimbus_eth1_github_api_repo_url }}/actions/variables'
+    schedule_variable_url:  '{{ schedule_variables_url }}/{{ nimbus_eth1_benchmark_schedule_variable }}'
+    scheduled_types: '{{ schedule_variable.json.value | default("[]") | from_json }}'
+    wanted_types: >-
+      {{ (scheduled_types | union([nimbus_eth1_benchmark_type])
+          if nimbus_eth1_benchmark_scheduled | bool
+          else scheduled_types | difference([nimbus_eth1_benchmark_type])) | sort }}
+  block:
+    - name: Read benchmark types the scheduler starts
+      uri:
+        url: '{{ schedule_variable_url }}'
+        status_code: [200, 404]
+      register: schedule_variable
+      check_mode: false
+
+    # The value is a list written as JSON. The body is passed as text, because Ansible would
+    # turn such a value back into a list on its own and GitHub only takes a string.
+    - name: Update benchmark types the scheduler starts
+      uri:
+        url:    '{{ schedule_variable_url if schedule_variable.status == 200 else schedule_variables_url }}'
+        method: '{{ "PATCH" if schedule_variable.status == 200 else "POST" }}'
+        body:   '{{ {"name": nimbus_eth1_benchmark_schedule_variable, "value": wanted_types | to_json} | to_json }}'
+        status_code: [201, 204]
+      changed_when: true
+      when:
+        - wanted_types | length > 0
+        - wanted_types != scheduled_types | sort
+
+    # The scheduler does nothing without the variable and fails on an empty list
+    - name: Remove benchmark types the scheduler starts
+      uri:
+        url:    '{{ schedule_variable_url }}'
+        method: 'DELETE'
+        status_code: 204
+      changed_when: true
+      when:
+        - wanted_types | length == 0
+        - schedule_variable.status == 200

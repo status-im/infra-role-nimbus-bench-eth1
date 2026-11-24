@@ -12,7 +12,7 @@
     path: /var/lib/nimbus-benchmark-metrics
     state: directory
     owner: "{{ nimbus_eth1_service_user }}"
-    group: consul
+    group: "{{ nimbus_eth1_service_group }}"
     mode: '0775'
 
 - name: Copy metrics collector script
@@ -23,12 +23,12 @@
     group: "{{ nimbus_eth1_service_group }}"
     mode: '0755'
 
+# From apt, pip refuses to install into the system Python on current Ubuntu.
 - name: Install Python packages for metrics exporter
-  pip:
+  apt:
     name:
-      - prometheus_client
-      - pyyaml
-    state: present
+      - python3-prometheus-client
+      - python3-yaml
 
 - name: Copy metrics exporter script
   copy:

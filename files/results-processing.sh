@@ -90,6 +90,9 @@ function fetchHostInformation() {
   echo -n ">>> RAM Size: "
   free -h | grep "Mem:" | awk '{print $2}'
 
+  echo -n ">>> Compiler: "
+  "${BENCHMARK_TOOLCHAIN_BIN}/gcc" --version | head -n 1
+
   echo ">>> Hard Disk Information:"
   df -h | grep '^/dev/' | awk '{print $1 " : " $2 " total, " $4 " free"}'
   echo "=========================="
