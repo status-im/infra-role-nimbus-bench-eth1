@@ -11,10 +11,13 @@ source /data/scripts/build-and-compile.sh    # Building binaries
 source /data/scripts/benchmark-execution.sh  # Running benchmarks
 source /data/scripts/results-processing.sh   # Processing and publishing results
 source /data/scripts/metrics-collector.sh    # Metrics collection
+source /data/scripts/discord-notify.sh       # Discord alerts
+source /data/scripts/run-state.sh            # Exchange with the GitHub Actions job
 
 function callAndLogFunc {
     local func_name="$1"
 
+    RUN_STAGE="${func_name}"
     echo ">>> starting ${func_name}"
     recordStageStart "${func_name}"
 
@@ -31,6 +34,8 @@ function callAndLogFunc {
     fi
 }
 
+initRun
+
 # Record benchmark start timestamp
 recordBenchmarkTimestamp
 # clones or updates the nimbus-eth1-benchmarks github repo
@@ -44,9 +49,9 @@ GIT_HASH=$(cd "${NIMBUS_ETH1_REPO}" && git rev-parse --short=8 HEAD)
 BENCHMARK_DESTINATION="${NIMBUS_ETH1_BENCHMARKS_REPO}/${BENCHMARKING_TYPE}-benchmark/${ISO_TIMESTAMP}_${GIT_HASH}"
 recordBenchmarkMetadata "${GIT_HASH}" "" "" 0
 
-callAndLogFunc 'buildBinaries'
 # decide whether to skip or continue
 callAndLogFunc 'skipOrContinueBenchmark'
+callAndLogFunc 'buildBinaries'
 
 if [[ "${BENCHMARKING_TYPE}" == "short" ]]; then
   # copies 20M template database to nimbus-eth1

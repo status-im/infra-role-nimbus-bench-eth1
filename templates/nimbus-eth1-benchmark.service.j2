@@ -14,8 +14,6 @@ TimeoutStartSec=36000
 Environment=BENCHMARKING_TYPE={{ nimbus_eth1_benchmark_type }}
 Environment=FORCE_RUN="false"
 ExecStart="{{ nimbus_eth1_service_scripts_base }}/run-benchmark.sh"
-Restart=always
-RestartSec=60
 
 [Install]
 WantedBy=multi-user.target

@@ -4,6 +4,7 @@
 - include_tasks: user.yml
 - include_tasks: config.yml
 - include_tasks: service.yml
+- include_tasks: runner.yml
 - include_tasks: metrics.yml
   tags: [metrics, monitoring]
 - include_tasks: consul.yml

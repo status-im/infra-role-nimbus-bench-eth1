@@ -1,0 +1,3 @@
+
+{{ nimbus_eth1_github_runner_user }} ALL=(root) NOPASSWD: /usr/bin/systemctl start {{ nimbus_eth1_service_name }}.service
+{{ nimbus_eth1_github_runner_user }} ALL=(root) NOPASSWD: /usr/bin/systemctl stop --no-block {{ nimbus_eth1_service_name }}.service

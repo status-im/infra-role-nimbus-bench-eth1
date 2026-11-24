@@ -1,0 +1,22 @@
+[Unit]
+Description=GitHub Actions runner for {{ nimbus_eth1_github_runner_repo_url }}
+Documentation=https://docs.github.com/en/actions/hosting-your-own-runners
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User={{ nimbus_eth1_github_runner_user }}
+Group={{ nimbus_eth1_github_runner_group }}
+WorkingDirectory={{ nimbus_eth1_github_runner_path }}
+ExecStart={{ nimbus_eth1_github_runner_path }}/runsvc.sh
+Restart=always
+RestartSec=60
+KillMode=process
+KillSignal=SIGTERM
+TimeoutStopSec=5min
+ProtectHome=true
+ProtectSystem=full
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

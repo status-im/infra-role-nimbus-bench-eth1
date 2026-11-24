@@ -9,3 +9,9 @@
   systemd:
     name: nimbus-benchmark-metrics
     state: restarted
+
+- name: restart github runner
+  systemd:
+    name: '{{ nimbus_eth1_github_runner_service_name }}'
+    state: restarted
+    daemon_reload: yes
