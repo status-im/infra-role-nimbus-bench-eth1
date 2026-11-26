@@ -60,9 +60,10 @@ nimbus_eth1_benchmarks_repo_url: 'git@github.com:status-im/nimbus-eth1-benchmark
 nimbus_eth1_benchmarks_ssh_key_file: '{{ nimbus_eth1_service_user_ssh_dir }}/id_rsa'
 nimbus_eth1_benchmarks_repo_ssh_key: '{{lookup("community.general.passwordstore", "services/nimbus-eth1-benchmark/deploy-key", returnall=true)}}'
 
-# Git identity and commit signing for pushes to the benchmarks repo.
+# Git identity and commit signing for pushes to the benchmarks repo. GitHub only shows a commit as
+# verified if the email belongs to the account the signing key is registered on, here ift-infra-bot.
 nimbus_eth1_git_user_name: 'Autobot'
-nimbus_eth1_git_user_email: '40699771+status-im-auto@users.noreply.github.com'
+nimbus_eth1_git_user_email: '360147096+ift-infra-bot@users.noreply.github.com'
 nimbus_eth1_git_signing_key_file: '{{ nimbus_eth1_service_user_ssh_dir }}/id_ed25519_signing'
 nimbus_eth1_git_signing_key: '{{lookup("community.general.passwordstore", "services/nimbus-eth1-benchmark/signing-key", returnall=true)}}'
 

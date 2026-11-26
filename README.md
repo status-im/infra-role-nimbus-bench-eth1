@@ -45,7 +45,7 @@ Read from the password store:
 | Entry | Purpose |
 |-|-|
 | `services/nimbus-eth1-benchmark/deploy-key` | SSH key with write access to nimbus-eth1-benchmarks |
-| `services/nimbus-eth1-benchmark/signing-key` | SSH key that signs the result commits, registered on the `status-im-auto` account |
+| `services/nimbus-eth1-benchmark/signing-key` | SSH key that signs the result commits, registered as a signing key on the `ift-infra-bot` account |
 | `services/nimbus-eth1-benchmark/discord-webhook` | Webhook that gets an alert when a run fails |
 | `services/nimbus-eth1-benchmark/discord-mention-id` | ID of the Discord user mentioned in that alert |
 
