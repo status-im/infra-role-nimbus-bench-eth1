@@ -4,7 +4,9 @@
     name:
       - build-essential
       - librocksdb-dev
+      # what scripts/block-import-stats.py of nimbus-eth1 imports
       - python3-pandas
+      - python3-matplotlib
       - 'gcc-{{ nimbus_eth1_benchmark_gcc_version }}'
       - 'g++-{{ nimbus_eth1_benchmark_gcc_version }}'
 

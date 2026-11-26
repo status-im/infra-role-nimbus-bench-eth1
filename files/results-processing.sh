@@ -102,8 +102,6 @@ function compareBenchmarkWithPrevious() {
   echo "=== Comparison of last two benchmarks ==="
 
   local NIMBUS_ETH1_BLOCKS_IMPORT_SCRIPT_PATH="${NIMBUS_ETH1_REPO}/scripts/block-import-stats.py"
-  local VENV_PATH="${NIMBUS_ETH1_REPO}/stats"
-
 
   if [ ! -d "${CURRENT_BENCHMARK_TYPE_DIR}" ]; then
     echo "${CURRENT_BENCHMARK_TYPE_DIR} does not exist, skipping compareBenchmarkWithPrevious()"
@@ -121,22 +119,10 @@ function compareBenchmarkWithPrevious() {
   local CURRENT_BENCHMARK_CSV_PATH="${CURRENT_BENCHMARK_TYPE_DIR}/${CURRENT_BENCHMARK_DIR_NAME}/${BENCHMARK_FILE_NAME}"
   local PREVIOUS_BENCHMARK_CSV_PATH="${CURRENT_BENCHMARK_TYPE_DIR}/${PREVIOUS_BENCHMARK_DIR_NAME}/${BENCHMARK_FILE_NAME}"
 
-  if [ ! -d "${VENV_PATH}" ]; then
-    python -m venv "${VENV_PATH}"
-  fi
-
-  # Activate virtual environment
-  source "${VENV_PATH}/bin/activate"
-
-  if [ -f "${NIMBUS_ETH1_REPO}/scripts/requirements.txt" ]; then
-    pip install -r "${NIMBUS_ETH1_REPO}/scripts/requirements.txt" >/dev/null 2>&1
-  fi
-
-  echo "python ${NIMBUS_ETH1_BLOCKS_IMPORT_SCRIPT_PATH} ${PREVIOUS_BENCHMARK_CSV_PATH} ${CURRENT_BENCHMARK_CSV_PATH}"
-  python "${NIMBUS_ETH1_BLOCKS_IMPORT_SCRIPT_PATH}" "${PREVIOUS_BENCHMARK_CSV_PATH}" "${CURRENT_BENCHMARK_CSV_PATH}" 2>&1 || true
-
-  # Deactivate virtual environment
-  deactivate
+  # The script runs on the Python of the OS, what it imports is installed by the role.
+  # nimbus-eth1 no longer ships a list of requirements to build an environment from.
+  echo "python3 ${NIMBUS_ETH1_BLOCKS_IMPORT_SCRIPT_PATH} ${PREVIOUS_BENCHMARK_CSV_PATH} ${CURRENT_BENCHMARK_CSV_PATH}"
+  python3 "${NIMBUS_ETH1_BLOCKS_IMPORT_SCRIPT_PATH}" "${PREVIOUS_BENCHMARK_CSV_PATH}" "${CURRENT_BENCHMARK_CSV_PATH}" 2>&1 || true
 
   echo "=========================="
 }
